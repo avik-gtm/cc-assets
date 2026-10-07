@@ -36,6 +36,7 @@ export const assetRequestSchema = z
     icp: z.string().trim().max(5_000).optional(),
     companyName: z.string().trim().max(500).optional(),
     companyDomain: z.string().trim().max(1_000).optional(),
+    logoUrl: optionalUrl,
     companyLinkedInUrl: optionalUrl,
     recipientName: z.string().trim().max(500).optional(),
     recipientTitle: z.string().trim().max(500).optional(),

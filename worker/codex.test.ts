@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import { assetRequestSchema } from "../src/lib/schemas";
 import { linearSupportAsset } from "../src/lib/examples/linear-support";
 import { codexArguments, codexEnvironment, finalizeCodexAsset, parseCodexResult, strictOutputSchema, withoutNulls, writeWithCodex } from "./codex";
-import { isPublicAddress, pageDescription, publicSourceUrl, readableText, verifyResearchSource } from "./research";
+import { brandCandidates, isPublicAddress, pageDescription, publicSourceUrl, readableText, verifyResearchSource } from "./research";
 import { runCommand } from "./claude";
 
 vi.mock("./claude", async (importOriginal) => {
@@ -54,6 +54,21 @@ describe("isolated Codex subprocess configuration", () => {
 });
 
 describe("public research source verification", () => {
+  it("finds official metadata logos before site icons, without using social previews", () => {
+    const html = '<link rel="icon" href="/icon.png"><meta property="og:image" content="https://linear.app/social.png"><script type="application/ld+json">{"@type":"Organization","logo":{"url":"https://linear.app/logo.svg"}}</script>';
+    expect(brandCandidates(html, "https://linear.app")).toEqual([
+      { logoUrl: "https://linear.app/logo.svg", kind: "logo" }, { logoUrl: "https://linear.app/icon.png", kind: "icon" },
+    ]);
+  });
+  it("rejects unsafe logos and scripts masquerading as markup", () => {
+    expect(brandCandidates('<img alt="logo" src="http://bad.com/logo.png"><link rel="icon" href="https://127.0.0.1/logo.png"><script>const x=\'<img alt="logo" src="https://fake.com/logo.png">\'</script>', "https://linear.app")).toEqual([]);
+  });
+  it("requests the exact model and Fast service tier", () => {
+    const args = codexArguments("/schema", false);
+    expect(args).toContain("gpt-6.1-sol");
+    expect(args).toContain('service_tier="fast"');
+    expect(args).toContain('model_reasoning_effort="low"');
+  });
   it.each(["127.0.0.1", "10.0.0.1", "169.254.169.254", "100.100.100.200", "172.20.0.1", "192.168.0.1", "0.0.0.0", "::1", "fe80::1", "fc00::1", "::ffff:127.0.0.1", "2001:db8::1"])("blocks private/reserved address %s", (address) => {
     expect(isPublicAddress(address)).toBe(false);
   });
@@ -120,6 +135,11 @@ describe("parallel bounded research + single writing call", () => {
 
 describe("deterministic safe writer finalization", () => {
   const input = assetRequestSchema.parse({ prompt: JSON.stringify(linearSupportAsset), sourceUrls: ["https://linear.app"], ctaUrl: "https://example.com/book" });
+  it("retains supplied or discovered branding even when the writer omits it", () => {
+    const output = structuredClone(linearSupportAsset);
+    delete output.logoUrl;
+    expect(finalizeCodexAsset(output, { ...input, logoUrl: "https://linear.app/logo.svg" }).logoUrl).toBe("https://linear.app/logo.svg");
+  });
   it("orders four unique section IDs without modifying their content", () => {
     const output = structuredClone(linearSupportAsset);
     output.sections.reverse();

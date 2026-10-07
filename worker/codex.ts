@@ -7,7 +7,7 @@ import { validateGeneratedAsset } from "../src/lib/generation/contract";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "../src/lib/generation/system-prompt";
 import { CONTEXT_ONLY_RULES } from "../src/lib/generation/context-rules";
 import { runCommand, WriterError, type CommandOptions } from "./claude";
-import { fetchCompanySeed, researchSchema, verifyResearchSource, type Research } from "./research";
+import { fetchCompanySeed, discoverCompanyBrand, researchSchema, verifyResearchSource, type Research } from "./research";
 
 export const codexGenerationSchema = z.object({ asset: generatedAssetSchema, research: researchSchema });
 export type CodexGenerationResult = { asset: GeneratedAsset; research: Research };
@@ -37,10 +37,10 @@ export function codexArguments(schemaPath: string, search: boolean, model?: stri
     "-c", 'approval_policy="never"', "-c", "project_doc_max_bytes=0", "-c", "skills.max_context_tokens=1",
     "-c", "apps._default.enabled=false", "-c", "mcp_servers={}",
     "-c", "allow_login_shell=false", "-c", 'shell_environment_policy.inherit="none"',
-    "-c", 'history.persistence="none"', "-c", 'model_reasoning_effort="low"',
+    "-c", 'history.persistence="none"', "-c", 'model_reasoning_effort="low"', "-c", 'service_tier="fast"',
     "-c", `web_search=${JSON.stringify(search ? "live" : "disabled")}`,
     ...(instructionsPath ? ["-c", `model_instructions_file=${JSON.stringify(instructionsPath)}`] : []),
-    ...(model ? ["--model", model] : []), "-"];
+    "--model", model || "gpt-6.1-sol", "-"];
 }
 
 // OpenAI strict JSON schemas require every property to be required. Optional
@@ -167,6 +167,7 @@ export async function researchWithCodex(input: AssetRequest, options: CodexOptio
   // company description evidence even when search does not finish in 16 seconds.
   const seedSignal = AbortSignal.any([signal, AbortSignal.timeout(7_000)]);
   const seedPromise = Promise.all([...seedUrls].slice(0, 2).map((url) => fetchCompanySeed(url, seedSignal)));
+  const brandPromise = input.logoUrl || !seedUrls.size ? Promise.resolve(undefined) : discoverCompanyBrand([...seedUrls][0], seedSignal);
   const results = await Promise.all(Object.entries(assignments).map(async ([name, assignment]) => {
     const branch = name as keyof typeof assignments;
     try {
@@ -186,13 +187,14 @@ export async function researchWithCodex(input: AssetRequest, options: CodexOptio
   const seeds = (await seedPromise).filter((source): source is NonNullable<typeof source> => Boolean(source));
   if (seeds.length) results.find((result) => result.branch.name === "company")!.branch.status = "complete";
   const unique = new Map([...seeds, ...results.flatMap((result) => result.sources)].map((source) => [`${source.url}|${source.quote}`, source]));
-  return { sources: [...unique.values()].slice(0, 6), branches: results.map((result) => result.branch), durationMs: Date.now() - started };
+  return { sources: [...unique.values()].slice(0, 6), brand: await brandPromise, branches: results.map((result) => result.branch), durationMs: Date.now() - started };
 }
 
 export async function writeWithCodex(input: AssetRequest, options: CodexOptions): Promise<CodexGenerationResult> {
   const research = await researchWithCodex(input, options);
   const enriched: AssetRequest = {
     ...input,
+    logoUrl: input.logoUrl || research.brand?.logoUrl,
     sourceUrls: [...new Set([...input.sourceUrls, ...research.sources.map((source) => source.url)])],
     verifiedEvidence: [input.verifiedEvidence || "", research.sources.length ?
       `Public-page text independently retrieved for this request. Exact source excerpts below; only claims supported by these excerpts are verified, not broader hypotheses.\n${JSON.stringify(research.sources)}` : ""].filter(Boolean).join("\n"),
@@ -229,6 +231,7 @@ export function finalizeCodexAsset(value: unknown, input: AssetRequest): Generat
   const raw = value && typeof value === "object" && !Array.isArray(value) ? { ...value } as Record<string, unknown> : value;
   if (raw && typeof raw === "object" && !Array.isArray(raw)) {
     const item = raw as Record<string, unknown>;
+    if (input.logoUrl) item.logoUrl = input.logoUrl;
     if (item.logoUrl !== undefined) {
       const logo = suppliedUrl(item.logoUrl);
       if (!logo) warnings.push("Unsupported optional logo was omitted.");

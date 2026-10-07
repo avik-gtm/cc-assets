@@ -2,6 +2,10 @@
 
 ## What you provide
 
+Recommended structured fields (all text unless noted): `productDescription`, `companyName`, `companyDomain`, `recipientName`, `recipientTitle`, `universe`, `icp`, `signal`, `verifiedEvidence`, `signalLogic`, and `prompt` for specific instructions or what you can demonstrate. `sourceUrls` is an array of HTTPS URLs. Optional `personLinkedInUrl` and `companyLinkedInUrl` are research seeds, not proof. Optional `logoUrl` is an HTTPS image URL; otherwise the worker discovers a published company logo or site icon from `companyDomain`. Optional `ctaUrl` is your actual booking/demo URL. Omit unavailable fields rather than inventing values.
+
+All new reports address the recipient directly as “you” and “your team.” Every research/writing process defaults to `gpt-6.1-sol` with Fast service tier requested and low reasoning. The signed-in Codex worker is the runtime, not a desktop Dot.
+
 You provide the context, not the finished six sections. Put this in an `Asset context` column, using your real row values:
 
 ```text

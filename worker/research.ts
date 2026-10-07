@@ -10,6 +10,7 @@ export const researchSourceSchema = z.object({
   checkedAt: z.string().date(),
 });
 export const researchSchema = z.object({
+  brand: z.object({ logoUrl: z.string().url().startsWith("https://"), sourceUrl: z.string().url().startsWith("https://"), kind: z.enum(["logo", "icon"]) }).optional(),
   sources: z.array(researchSourceSchema).max(6),
   branches: z.array(z.object({
     name: z.enum(["company", "problem", "buyer"]),
@@ -70,7 +71,7 @@ export function pageDescription(html: string): string | undefined {
   return undefined;
 }
 
-async function fetchPublicHtml(raw: string, signal: AbortSignal, redirects = 0): Promise<string> {
+async function fetchPublicHtml(raw: string, signal: AbortSignal, redirects = 0, image = false): Promise<string> {
   if (signal.aborted) throw new Error("source_timeout");
   const url = publicSourceUrl(raw);
   const answers = await Promise.race([
@@ -90,10 +91,11 @@ async function fetchPublicHtml(raw: string, signal: AbortSignal, redirects = 0):
     }, (res) => {
       if (res.statusCode && res.statusCode >= 300 && res.statusCode < 400 && res.headers.location && redirects < 2) {
         res.resume();
-        fetchPublicHtml(new URL(res.headers.location, url).href, signal, redirects + 1).then(resolve, reject);
+        fetchPublicHtml(new URL(res.headers.location, url).href, signal, redirects + 1, image).then(resolve, reject);
         return;
       }
-      if (res.statusCode !== 200 || !/^(?:text\/html|text\/plain|application\/xhtml\+xml)\b/i.test(String(res.headers["content-type"]))) {
+      const accepted = image ? /^image\/(?:png|jpeg|webp|svg\+xml|x-icon|vnd.microsoft.icon|gif)\b/i : /^(?:text\/html|text\/plain|application\/xhtml\+xml)\b/i;
+      if (res.statusCode !== 200 || !accepted.test(String(res.headers["content-type"]))) {
         res.resume(); reject(new Error("source_unavailable")); return;
       }
       const chunks: Buffer[] = []; let size = 0;
@@ -107,6 +109,53 @@ async function fetchPublicHtml(raw: string, signal: AbortSignal, redirects = 0):
     });
     req.on("error", reject); req.end();
   });
+}
+
+/** Use branding explicitly published by the company, not model-guessed URLs or
+ * arbitrary social-preview images. Icons are a fallback, not a verified wordmark. */
+export function brandCandidates(html: string, origin: string): { logoUrl: string; kind: "logo" | "icon" }[] {
+  const candidates: { logoUrl: string; kind: "logo" | "icon" }[] = [];
+  const add = (value: unknown, kind: "logo" | "icon") => {
+    if (typeof value !== "string" || !value) return;
+    try { candidates.push({ logoUrl: publicSourceUrl(new URL(value.replaceAll("&amp;", "&"), origin).href).href, kind }); } catch { /* reject unsafe assets */ }
+  };
+  for (const script of html.matchAll(/<script\b[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+    const walk = (value: unknown, depth = 0) => {
+      if (!value || typeof value !== "object" || depth > 8) return;
+      if (Array.isArray(value)) { value.forEach(v => walk(v, depth + 1)); return; }
+      const obj = value as Record<string, unknown>;
+      if (/Organization|Corporation|Brand/.test(String(obj["@type"]))) {
+        const logo = obj.logo;
+        add(typeof logo === "object" && logo ? (logo as Record<string, unknown>).url : logo, "logo");
+      }
+      if (obj["@graph"]) walk(obj["@graph"], depth + 1);
+    };
+    try { walk(JSON.parse(script[1])); } catch { /* malformed metadata */ }
+  }
+  const markup = html.replace(/<(script|style|noscript)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, " ");
+  const companyToken = new URL(origin).hostname.replace(/^www\./, "").split(".")[0].toLowerCase();
+  for (const tag of markup.match(/<(?:img|link)\b[^>]*>/gi) || []) {
+    const attrs = Object.fromEntries([...tag.matchAll(/([\w:-]+)\s*=\s*(?:"([^"]*)"|'([^']*)')/g)].map(m => [m[1].toLowerCase(), m[2] ?? m[3]]));
+    const identity = (attrs.alt || "").toLowerCase();
+    if (/^<img/i.test(tag) && /logo|wordmark/i.test([attrs.alt, attrs.class, attrs.id].join(" ")) &&
+      (identity.includes(companyToken) || /^(?:company |brand )?(?:logo|wordmark)$/.test(identity)) &&
+      !/customer|partner|client/i.test([attrs.alt, attrs.class, attrs.id].join(" "))) add(attrs.src, "logo");
+    if (/^<link/i.test(tag) && /^(?:apple-touch-icon|icon|shortcut icon)$/i.test(attrs.rel || "")) add(attrs.href, "icon");
+  }
+  return [...new Map(candidates.sort((a, b) => Number(a.kind === "icon") - Number(b.kind === "icon")).map(c => [c.logoUrl, c])).values()].slice(0, 4);
+}
+
+export async function discoverCompanyBrand(origin: string, signal: AbortSignal): Promise<Research["brand"]> {
+  try {
+    const candidates = brandCandidates(await fetchPublicHtml(origin, signal), origin);
+    for (const candidate of candidates) {
+      try {
+        await fetchPublicHtml(candidate.logoUrl, signal, 0, true);
+        return { ...candidate, sourceUrl: origin };
+      } catch { if (signal.aborted) break; }
+    }
+  } catch { /* optional discovery must never block generation */ }
+  return undefined;
 }
 
 export async function fetchPublicText(raw: string, signal: AbortSignal): Promise<string> {

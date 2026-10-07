@@ -98,7 +98,7 @@ async function callApprovedAgentService(
   const value: unknown = JSON.parse(Buffer.concat(chunks).toString("utf8"));
   if (value && typeof value === "object" && "research" in value) {
     const envelope = researchedGenerationSchema.parse(value);
-    const enrichedInput = { ...input, sourceUrls: [...input.sourceUrls, ...envelope.research.sources.map(source => source.url)] };
+    const enrichedInput = { ...input, logoUrl: input.logoUrl || envelope.research.brand?.logoUrl, sourceUrls: [...input.sourceUrls, ...envelope.research.sources.map(source => source.url)] };
     return {
       asset: validateGeneratedAsset(envelope.asset, enrichedInput),
       research: { sourceCount: envelope.research.sources.length, completed: envelope.research.branches.filter(branch => branch.status === "complete").length },

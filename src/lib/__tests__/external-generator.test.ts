@@ -17,10 +17,12 @@ describe("external generator only", () => {
     vi.stubEnv("ASSET_GENERATOR_URL", "https://generator.example.test/generate");
     vi.stubEnv("ASSET_GENERATOR_TOKEN", "private-test-token");
     const researched = structuredClone(linearSupportAsset);
+    researched.logoUrl = "https://linear.app/new-logo.svg";
     researched.sources = [{ label: "Verified page", url: "https://linear.app/new-public-evidence" }];
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
       asset: researched,
       research: {
+        brand: { logoUrl: "https://linear.app/new-logo.svg", sourceUrl: "https://linear.app", kind: "logo" },
         sources: [{ url: "https://linear.app/new-public-evidence", title: "Verified page", quote: "An exact public-page excerpt.", checkedAt: "2026-10-07" }],
         branches: [{ name: "company", status: "complete" }, { name: "problem", status: "incomplete" }, { name: "buyer", status: "incomplete" }],
         durationMs: 12000,
@@ -29,6 +31,7 @@ describe("external generator only", () => {
     const result = await generateAsset(input);
     expect(result.metadata).toEqual({ provider: "external", researchMode: "parallel_public_research", verifiedSourceCount: 1, completedResearchBranches: 1 });
     expect(result.asset.sources[0].url).toBe("https://linear.app/new-public-evidence");
+    expect(result.asset.logoUrl).toBe("https://linear.app/new-logo.svg");
   });
 
   it("has no Gateway fallback even with a stale model variable", async () => {

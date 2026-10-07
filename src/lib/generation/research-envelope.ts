@@ -6,6 +6,7 @@ import { generatedAssetSchema } from "../schemas";
 export const researchedGenerationSchema = z.object({
   asset: generatedAssetSchema,
   research: z.object({
+    brand: z.object({ logoUrl: z.string().url().startsWith("https://"), sourceUrl: z.string().url().startsWith("https://"), kind: z.enum(["logo", "icon"]) }).strict().optional(),
     sources: z.array(z.object({
       url: z.string().url().startsWith("https://").max(3000),
       title: z.string().max(1000),

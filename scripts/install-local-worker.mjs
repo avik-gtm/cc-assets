@@ -13,7 +13,7 @@ await mkdir(runtime, { recursive: true, mode: 0o700 });
 await chmod(runtime, 0o700);
 const envPath = join(root, ".env.worker.local");
 try { await access(envPath); } catch {
-  await writeFile(envPath, `ASSET_GENERATOR_TOKEN=${randomBytes(32).toString("hex")}\nASSET_WRITER_MODE=codex\nASSET_CODEX_BIN=${join(dirname(process.execPath), "codex")}\nASSET_CODEX_MODEL=gpt-5.6-luna\nASSET_WORKER_HOST=127.0.0.1\nASSET_WORKER_PORT=8791\n`, { mode: 0o600, flag: "wx" });
+  await writeFile(envPath, `ASSET_GENERATOR_TOKEN=${randomBytes(32).toString("hex")}\nASSET_WRITER_MODE=codex\nASSET_CODEX_BIN=${join(dirname(process.execPath), "codex")}\nASSET_CODEX_MODEL=gpt-6.1-sol\nASSET_WORKER_HOST=127.0.0.1\nASSET_WORKER_PORT=8791\n`, { mode: 0o600, flag: "wx" });
 }
 await chmod(envPath, 0o600);
 const label = "io.enrichflow.personalized-assets.worker";

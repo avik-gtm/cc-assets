@@ -5,7 +5,7 @@ The website hosts the finished assets. This worker runs **outside Vercel**, usin
 ## Current setup — October 7, 2026
 
 - The worker runs on the current Mac as `gui/501/io.enrichflow.personalized-assets.worker`, bound to `127.0.0.1:8791`.
-- Vercel's private `ASSET_GENERATOR_URL` currently forwards to `https://topics-framing-jose-input.trycloudflare.com/generate`.
+- Vercel forwards to a privately configured generator address. Exact endpoint and authentication details are omitted from this README.
 - This is a **temporary Cloudflare quick tunnel for testing**, not production uptime. The Mac must remain awake, logged in, and online, and the tunnel process must remain running. Restarting a quick tunnel changes its hostname; update the private Vercel endpoint and redeploy if that happens.
 - The worker secret is in ignored `.env.worker.local`. Vercel's original `ASSET_API_KEY` is preserved but masked; `.env.local` does not contain its usable value. The new dedicated caller key `ASSET_OPERATOR_API_KEY` is in ignored `.env.operator.local`. Never print, commit, or paste secrets into a prompt.
 - **A Dot is not configured and is not in the timed request path.** The worker, not a Dot wake-up, launches three parallel research subprocesses and one writer.
@@ -18,7 +18,7 @@ For a stable deployment, run the worker on an approved always-on host with a per
 ## Request flow
 
 ```text
-Clay → website /api/assets → authenticated worker /generate
+Clay → website forwarding service → authenticated worker
      → three parallel researchers → evidence checks → one writer
      → website validates and stores the public document → asset URL
 ```
@@ -48,7 +48,7 @@ Private environment settings:
 | `ASSET_GENERATOR_TOKEN` | Dedicated service secret of at least 32 characters; must match Vercel. Not the Clay caller key. |
 | `ASSET_WRITER_MODE` | Defaults to Codex. `claude` explicitly selects the legacy supplied-context-only writer. |
 | `ASSET_CODEX_BIN` | Optional absolute Codex binary path; defaults to `codex`. |
-| `ASSET_CODEX_MODEL` | Optional model override supported by the signed-in runtime; the current test uses `gpt-5.6-luna`. |
+| `ASSET_CODEX_MODEL` | Defaults to `gpt-6.1-sol`; all research and writing calls request Fast mode with low reasoning. |
 | `ASSET_WORKER_HOST` | `127.0.0.1`; keep the raw Node port private. |
 | `ASSET_WORKER_PORT` | Defaults to `8791`. |
 | `ASSET_WORKER_CONCURRENCY` | One asset request by default, range 1–3. Each Codex request has three parallel research branches. Excess requests receive 429, not a hidden queue. |
@@ -64,14 +64,11 @@ The installer is `node scripts/install-local-worker.mjs`; it creates or updates 
 
 ## Service contract and safeguards
 
-Both routes require the dedicated bearer token:
-
-- `GET /health`: process mode, readiness, and active jobs; not a model-generation test.
-- `POST /generate`: `{ "input": { "prompt": "..." }, "systemPrompt": "...", "outputSchema": {...} }`.
+Both process-readiness checks and generation requests require dedicated service authentication. Exact routes and request configuration are maintained in the operator setup, not this README.
 
 The incoming prompt/schema fields are compatibility fields; checked-in system instructions and validation remain authoritative. Codex mode returns `{ "asset": <GeneratedAsset>, "research": { "sources": [...], "branches": [...], "durationMs": 0 } }`. The website accepts newly discovered source URLs only through this authenticated research envelope. Legacy Claude mode returns the generated asset directly and does not research.
 
-Clay calls `https://cc.getattn.io/api/assets`, not the worker. Vercel requires `ASSET_GENERATOR_URL` plus the matching private `ASSET_GENERATOR_TOKEN`; the caller supplies the primary `ASSET_API_KEY` or the additional `ASSET_OPERATOR_API_KEY` as its bearer key. `npm run asset:generate -- examples/requests/linear-live-test.json` reads the local private operator key automatically and defaults to the custom domain.
+Clay calls the website's authenticated forwarding service, not the worker directly. Caller credentials and worker credentials are separate. Never put either into the asset context or source control.
 
 The worker uses isolated temporary directories, read-only execution, no shell, no local file tools, no connectors, and no inherited user plugins or memories. Research gets hosted web search; the writer gets no tools. Sources are untrusted data, never instructions. Source fetches restrict public HTTPS targets, validate DNS, bound response size, and check redirect destinations. Hosting keys and the service token are not passed into model subprocesses.
 
