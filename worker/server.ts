@@ -3,6 +3,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from "node:ht
 import { z } from "zod";
 import { assetRequestSchema, type AssetRequest, type GeneratedAsset } from "../src/lib/schemas";
 import { WriterError } from "./claude";
+import type { ResearchedGeneration } from "../src/lib/generation/research-envelope";
 
 const envelopeSchema = z.object({
   input: assetRequestSchema,
@@ -60,7 +61,8 @@ function body(request: IncomingMessage, signal: AbortSignal): Promise<unknown> {
 export function createWriterServer(options: {
   token: string;
   maxConcurrent?: number;
-  generate: (input: AssetRequest, signal: AbortSignal) => Promise<GeneratedAsset>;
+  mode?: "codex_cli" | "claude_cli";
+  generate: (input: AssetRequest, signal: AbortSignal) => Promise<GeneratedAsset | ResearchedGeneration>;
 }) {
   if (options.token.trim().length < 32) throw new Error("A private service token of at least 32 characters is required.");
   const limit = options.maxConcurrent ?? 1;
@@ -74,7 +76,7 @@ export function createWriterServer(options: {
     if (!timingSafeEqual(expected, supplied)) { send(response, 401, { error: "unauthorized" }); request.resume(); return; }
     if (request.method === "GET" && request.url === "/health") {
       // This is process readiness, not a model request or a latency assertion.
-      send(response, 200, { ok: accepting, mode: "claude_cli", researchMode: "supplied_context_only", active: controllers.size }); return;
+      send(response, 200, { ok: accepting, mode: options.mode ?? "claude_cli", researchMode: options.mode === "codex_cli" ? "parallel_public_research" : "supplied_context_only", active: controllers.size }); return;
     }
     if (request.method !== "POST" || request.url !== "/generate") { send(response, 404, { error: "not_found" }); request.resume(); return; }
     if (!accepting) { send(response, 503, { error: "shutting_down" }); request.resume(); return; }
@@ -97,6 +99,7 @@ export function createWriterServer(options: {
       send(response, 200, result);
     } catch (error) {
       const failure = error instanceof WriterError ? error : new WriterError("generation_failed");
+      console.warn(JSON.stringify({ event: "asset_worker_failed", code: failure.code, status: failure.status }));
       send(response, failure.status, { error: failure.code });
     } finally {
       controllers.delete(controller);

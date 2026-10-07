@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { normalizeAssetRequest } from "@/lib/normalize";
 import { createPersonalizedAsset } from "@/lib/orchestrator";
 import { GenerationUnavailableError } from "@/lib/generation/generator";
+import { createHash, timingSafeEqual } from "node:crypto";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -10,9 +11,10 @@ export const maxDuration = 120;
 const MAX_BODY_BYTES = 200_000;
 
 function isAuthorized(request: NextRequest): boolean {
-  const requiredKey = process.env.ASSET_API_KEY;
-  if (!requiredKey) return !process.env.VERCEL;
-  return request.headers.get("authorization") === `Bearer ${requiredKey}`;
+  const keys = [process.env.ASSET_API_KEY, process.env.ASSET_OPERATOR_API_KEY].filter((key): key is string => Boolean(key));
+  if (!keys.length) return !process.env.VERCEL;
+  const supplied = createHash("sha256").update(request.headers.get("authorization") || "").digest();
+  return keys.some(key => timingSafeEqual(supplied, createHash("sha256").update(`Bearer ${key}`).digest()));
 }
 
 async function parseBody(request: NextRequest): Promise<unknown> {

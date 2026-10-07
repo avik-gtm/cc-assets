@@ -13,6 +13,24 @@ afterEach(() => {
 });
 
 describe("external generator only", () => {
+  it("accepts verified research only through the authenticated worker envelope", async () => {
+    vi.stubEnv("ASSET_GENERATOR_URL", "https://generator.example.test/generate");
+    vi.stubEnv("ASSET_GENERATOR_TOKEN", "private-test-token");
+    const researched = structuredClone(linearSupportAsset);
+    researched.sources = [{ label: "Verified page", url: "https://linear.app/new-public-evidence" }];
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(Response.json({
+      asset: researched,
+      research: {
+        sources: [{ url: "https://linear.app/new-public-evidence", title: "Verified page", quote: "An exact public-page excerpt.", checkedAt: "2026-10-07" }],
+        branches: [{ name: "company", status: "complete" }, { name: "problem", status: "incomplete" }, { name: "buyer", status: "incomplete" }],
+        durationMs: 12000,
+      },
+    })));
+    const result = await generateAsset(input);
+    expect(result.metadata).toEqual({ provider: "external", researchMode: "parallel_public_research", verifiedSourceCount: 1, completedResearchBranches: 1 });
+    expect(result.asset.sources[0].url).toBe("https://linear.app/new-public-evidence");
+  });
+
   it("has no Gateway fallback even with a stale model variable", async () => {
     vi.stubEnv("ASSET_GENERATOR_URL", "");
     vi.stubEnv("AI_GATEWAY_MODEL", "stale/model");

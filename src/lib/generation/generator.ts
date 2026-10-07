@@ -8,6 +8,7 @@ import { getReferenceAsset } from "@/lib/examples/references";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
 import { CONTEXT_ONLY_RULES } from "./context-rules";
 import { validateGeneratedAsset } from "./contract";
+import { researchedGenerationSchema } from "./research-envelope";
 
 export type GenerationResult = {
   asset: GeneratedAsset;
@@ -15,7 +16,9 @@ export type GenerationResult = {
   warnings: string[];
   metadata?: {
     provider: "external";
-    researchMode: "supplied_context_only";
+    researchMode: "supplied_context_only" | "parallel_public_research";
+    verifiedSourceCount?: number;
+    completedResearchBranches?: number;
   };
 };
 
@@ -31,7 +34,7 @@ export class GenerationUnavailableError extends Error {
 
 async function callApprovedAgentService(
   input: AssetRequest,
-): Promise<GeneratedAsset> {
+): Promise<{ asset: GeneratedAsset; research?: { sourceCount: number; completed: number } }> {
   const endpoint = process.env.ASSET_GENERATOR_URL;
   if (!endpoint) throw new Error("ASSET_GENERATOR_URL is not configured.");
   const url = new URL(endpoint);
@@ -92,10 +95,16 @@ async function callApprovedAgentService(
     await reader.cancel();
     reader.releaseLock();
   }
-  return validateGeneratedAsset(
-    JSON.parse(Buffer.concat(chunks).toString("utf8")),
-    input,
-  );
+  const value: unknown = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+  if (value && typeof value === "object" && "research" in value) {
+    const envelope = researchedGenerationSchema.parse(value);
+    const enrichedInput = { ...input, sourceUrls: [...input.sourceUrls, ...envelope.research.sources.map(source => source.url)] };
+    return {
+      asset: validateGeneratedAsset(envelope.asset, enrichedInput),
+      research: { sourceCount: envelope.research.sources.length, completed: envelope.research.branches.filter(branch => branch.status === "complete").length },
+    };
+  }
+  return { asset: validateGeneratedAsset(value, input) };
 }
 
 export async function generateAsset(
@@ -118,11 +127,18 @@ export async function generateAsset(
   }
 
   try {
+    const result = await callApprovedAgentService(input);
     return {
-      asset: await callApprovedAgentService(input),
+      asset: result.asset,
       mode: "agent",
-      metadata: { provider: "external", researchMode: "supplied_context_only" },
-      warnings: [
+      metadata: result.research ? {
+        provider: "external", researchMode: "parallel_public_research",
+        verifiedSourceCount: result.research.sourceCount,
+        completedResearchBranches: result.research.completed,
+      } : { provider: "external", researchMode: "supplied_context_only" },
+      warnings: result.research ? [
+        `Public research checked ${result.research.sourceCount} source(s); ${result.research.completed}/3 research branches completed within the time budget. Unverified findings were omitted.`,
+      ] : [
         "Generated from supplied context only. No live website, LinkedIn, or accessibility audit was performed.",
       ],
     };

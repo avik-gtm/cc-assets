@@ -3,14 +3,16 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { claudeEnvironment, checkClaude, writeWithClaude, WriterError } from "./claude";
 import { createWriterServer } from "./server";
+import { codexEnvironment, checkCodex, writeWithCodex } from "./codex";
 
 async function main() {
   // A private, empty working directory, not the user's repo or original worker.
   const workspace = await mkdtemp(join(tmpdir(), "personalized-asset-writer-"));
   const removeWorkspace = () => rm(workspace, { recursive: true, force: true });
-  const options = { executable: process.env.ASSET_CLAUDE_BIN || "claude", cwd: workspace, env: claudeEnvironment() };
+  const useCodex = process.env.ASSET_WRITER_MODE !== "claude";
+  const options = { executable: useCodex ? (process.env.ASSET_CODEX_BIN || "codex") : (process.env.ASSET_CLAUDE_BIN || "claude"), cwd: workspace, env: useCodex ? codexEnvironment() : claudeEnvironment() };
   try {
-    await checkClaude(options);
+    await (useCodex ? checkCodex(options) : checkClaude(options));
     if (process.argv.includes("--check")) {
       console.log(JSON.stringify({ ready: true, generationTested: false }));
       await removeWorkspace(); return;
@@ -21,13 +23,14 @@ async function main() {
     const writer = createWriterServer({
       token: process.env.ASSET_GENERATOR_TOKEN || "",
       maxConcurrent: Number(process.env.ASSET_WORKER_CONCURRENCY || "1"),
-      generate: (input, signal) => writeWithClaude(input, { ...options, signal }),
+      mode: useCodex ? "codex_cli" : "claude_cli",
+      generate: (input, signal) => useCodex ? writeWithCodex(input, { ...options, signal, model: process.env.ASSET_CODEX_MODEL }) : writeWithClaude(input, { ...options, signal }),
     });
     await new Promise<void>((resolve, reject) => {
       writer.server.once("error", reject);
       writer.server.listen(port, host, resolve);
     });
-    console.log(JSON.stringify({ listening: true, host, port, researchMode: "supplied_context_only", generationTested: false }));
+    console.log(JSON.stringify({ listening: true, host, port, researchMode: useCodex ? "parallel_public_research" : "supplied_context_only", generationTested: false }));
     let shuttingDown = false;
     const shutdown = async () => {
       if (shuttingDown) return;

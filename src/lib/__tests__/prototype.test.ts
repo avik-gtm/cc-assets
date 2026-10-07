@@ -374,6 +374,26 @@ describe("honest generation modes", () => {
 });
 
 describe("API boundaries", () => {
+  it.each(["existing-clay-key", "separate-operator-key"])("preserves both authorized keys: %s", async (key) => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("ASSET_API_KEY", "existing-clay-key");
+    vi.stubEnv("ASSET_OPERATOR_API_KEY", "separate-operator-key");
+    const response = await POST(new NextRequest("https://cc.getattn.io/api/assets", {
+      method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ example: "linear-support" }),
+    }));
+    expect(response.status).toBe(200);
+    expect((await response.json()).assetUrl).toContain("https://cc.getattn.io/a/");
+  });
+  it("rejects incorrect credentials even when an operator key is configured", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("ASSET_API_KEY", "existing-clay-key");
+    vi.stubEnv("ASSET_OPERATOR_API_KEY", "separate-operator-key");
+    const response = await POST(new NextRequest("https://cc.getattn.io/api/assets", {
+      method: "POST", headers: { Authorization: "Bearer wrong" }, body: "test",
+    }));
+    expect(response.status).toBe(401);
+  });
   it("downloads an editable recipient-only document with an attachment header", async () => {
     const response = await download(new Request("http://localhost/test"), {
       params: Promise.resolve({ slug: linearSupportAsset.slug }),

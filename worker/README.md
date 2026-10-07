@@ -1,69 +1,88 @@
-# Separate Claude writer
+# Separate Codex research and writing worker
 
-This is the content-writing part of the personalized-asset system. It runs on a **separate, approved machine with Claude Code signed in**. It is not a Vercel Function, an AI Gateway integration, or a replacement for the original GTM audit worker.
+The website hosts the finished assets. This worker runs **outside Vercel**, using the signed-in Codex CLI to research and write them. No Vercel AI Gateway or Vercel model billing is involved.
 
-## Current status
+## Current setup — October 7, 2026
 
-Implemented and locally tested: authenticated HTTP transport, restricted process invocation, structured-output validation, cancellation, time limits, and error handling. Tests use authored fixture content and Node subprocesses; they are **not real model generation**. The installed Claude CLI on the current Mac fails the sign-in check. The configured original OpenClaw Mac was not reachable at the latest check.
+- The worker runs on the current Mac as `gui/501/io.enrichflow.personalized-assets.worker`, bound to `127.0.0.1:8791`.
+- Vercel's private `ASSET_GENERATOR_URL` currently forwards to `https://topics-framing-jose-input.trycloudflare.com/generate`.
+- This is a **temporary Cloudflare quick tunnel for testing**, not production uptime. The Mac must remain awake, logged in, and online, and the tunnel process must remain running. Restarting a quick tunnel changes its hostname; update the private Vercel endpoint and redeploy if that happens.
+- The worker secret is in ignored `.env.worker.local`. Vercel's original `ASSET_API_KEY` is preserved but masked; `.env.local` does not contain its usable value. The new dedicated caller key `ASSET_OPERATOR_API_KEY` is in ignored `.env.operator.local`. Never print, commit, or paste secrets into a prompt.
+- **A Dot is not configured and is not in the timed request path.** The worker, not a Dot wake-up, launches three parallel research subprocesses and one writer.
+- The 30–60-second target must be assessed with real end-to-end requests. Process health, reference examples, unit tests, and configured time limits do not prove generation quality or latency.
+- A genuine `gpt-5.6-luna` worker generation completed in **45.6 seconds with two independently retrieved Linear sources**. Company context was obtained; problem and buyer search branches did not return verified findings before their cutoff. An earlier zero-source run also completed, while another hit the old 30-second writer timeout. Full website-to-published-page acceptance is recorded separately; these are individual measurements, not a broad speed guarantee.
+- `https://cc.getattn.io` is live: DNS, HTTPS, health, and both authored example pages passed checks. Health reports configured generation, not a completed model request.
 
-No public writer endpoint has been deployed. New-company creation on the hosted asset site remains unavailable. No source retrieval, hobby research, gift fulfillment, or sub-120-second run is claimed.
+For a stable deployment, run the worker on an approved always-on host with a persistent HTTPS endpoint. Do not use the temporary tunnel as an availability promise for the live competition.
 
-## Run on the approved machine
+## Request flow
 
-From the repository, with Node.js 22+ and dependencies installed:
+```text
+Clay → website /api/assets → authenticated worker /generate
+     → three parallel researchers → evidence checks → one writer
+     → website validates and stores the public document → asset URL
+```
+
+The three research assignments are company context, problem-specific evidence, and buyer context. They use hosted web search with a shared 20-second research budget, at most two source candidates per branch. Code also retrieves up to two official-site pages in parallel (seven-second cutoff) and extracts their publisher descriptions as baseline company context. Code separately retrieves search candidates over public HTTPS and admits a quote only when it appears in the retrieved text. Unavailable or unverified findings are omitted. For fast baseline retrieval, pass `companyDomain` explicitly in addition to any free-text prompt.
+
+The writer has a 40-second command deadline and uses the supplied context plus admitted source excerpts. It creates a compact six-part brief: headline, current situation, likely problem, solution, alternative options, and CTA. A source matching its quote does not validate every broader inference; unknown internal conditions must remain conditional in the prose. Research branch status and warnings remain operator-only.
+
+The writer can proceed with supplied context when a research branch times out. Check `generation.verifiedSourceCount`, `generation.completedResearchBranches`, and `warnings` in the website response before treating an output as newly researched. No fabricated filler, reviews, comparable-company results, branding, hobbies, or gift approval is allowed.
+
+## Build, check, and run
+
+Use Node.js 22+ and a signed-in Codex CLI supporting the flags checked by `worker:check`:
 
 ```sh
+npm ci
 npm run worker:build
 npm run worker:check
 ```
 
-The check verifies supported CLI flags and sign-in status without running a model or printing credentials. A `ready: true` check is not a successful generation test. If it returns `claude_not_signed_in`, sign in to Claude on that machine before continuing. A browser Claude session does not establish that the CLI is signed in.
+`worker:check` checks CLI capabilities and sign-in without invoking a model or printing credentials. `ready: true` is not a completed generation test.
 
-Configure these private environment values through the machine's service manager:
+Private environment settings:
 
 | Setting | Purpose |
 | --- | --- |
-| `ASSET_GENERATOR_TOKEN` | A dedicated secret of at least 32 characters; match it in the website's private configuration. Do not reuse the Clay caller key. |
-| `ASSET_CLAUDE_BIN` | Optional absolute Claude binary path; defaults to `claude` in PATH. |
-| `ASSET_WORKER_HOST` | Defaults to `127.0.0.1`; change only for an approved, protected deployment. |
-| `ASSET_WORKER_PORT` | Defaults to `8791`; separate from the original worker's port. |
-| `ASSET_WORKER_CONCURRENCY` | Defaults to one active job; range 1–3. Extra jobs receive 429, not a hidden queue. |
+| `ASSET_GENERATOR_TOKEN` | Dedicated service secret of at least 32 characters; must match Vercel. Not the Clay caller key. |
+| `ASSET_WRITER_MODE` | Defaults to Codex. `claude` explicitly selects the legacy supplied-context-only writer. |
+| `ASSET_CODEX_BIN` | Optional absolute Codex binary path; defaults to `codex`. |
+| `ASSET_CODEX_MODEL` | Optional model override supported by the signed-in runtime; the current test uses `gpt-5.6-luna`. |
+| `ASSET_WORKER_HOST` | `127.0.0.1`; keep the raw Node port private. |
+| `ASSET_WORKER_PORT` | Defaults to `8791`. |
+| `ASSET_WORKER_CONCURRENCY` | One asset request by default, range 1–3. Each Codex request has three parallel research branches. Excess requests receive 429, not a hidden queue. |
 
-Then run `npm run worker:start`. It refuses to start without supported CLI flags, a signed-in CLI, and a sufficiently long service token. It does not install a background service, set up a tunnel, change login state, or open a public endpoint automatically.
+For the existing Mac installation, rebuilding does not restart the running process. After an intentional worker update:
 
-For hosted use, place this service behind the approved host's HTTPS endpoint and request-size/rate limits. Keep the loopback binding when using a local reverse proxy. Do not expose the unencrypted Node port publicly. Set the site's `ASSET_GENERATOR_URL` to that exact HTTPS `/generate` URL, and its private `ASSET_GENERATOR_TOKEN` to the matching secret. No model key belongs in the browser or Clay prompt.
+```sh
+npm run worker:build
+launchctl kickstart -k gui/501/io.enrichflow.personalized-assets.worker
+```
 
-Use a dedicated service account without organization-managed execution hooks. Safe mode disables user customizations but cannot override administrator policies. No broad original GTM-worker permissions or credentials are needed. An existing Claude session may use its own keychain; the service does not extract, copy, or log it.
+The installer is `node scripts/install-local-worker.mjs`; it creates or updates this checkout's dedicated launch agent and private environment file, not the original GTM audit worker. `npm run worker:start` can also run in a foreground process when its private environment has already been loaded. Do not run two workers on the same port.
 
-## HTTP contract
+## Service contract and safeguards
 
-Both routes require `Authorization: Bearer [private service token]`:
+Both routes require the dedicated bearer token:
 
-- `GET /health`: process readiness and active-job count. Not a model/auth recheck.
-- `POST /generate`, `Content-Type: application/json`: `{ "input": { "prompt": "..." }, "systemPrompt": "...", "outputSchema": {...} }`.
+- `GET /health`: process mode, readiness, and active jobs; not a model-generation test.
+- `POST /generate`: `{ "input": { "prompt": "..." }, "systemPrompt": "...", "outputSchema": {...} }`.
 
-`systemPrompt` and `outputSchema` are accepted for compatibility with the site, but the writer uses the **checked-in** writing rules and schema. An incoming request cannot replace them or choose a command. Success returns the generated asset JSON directly, as expected by the existing forwarding API. Only that API stores the recipient-safe result and returns the hosted URL. Do not expose this service directly to Clay; Clay continues to use `/api/assets` on the website.
+The incoming prompt/schema fields are compatibility fields; checked-in system instructions and validation remain authoritative. Codex mode returns `{ "asset": <GeneratedAsset>, "research": { "sources": [...], "branches": [...], "durationMs": 0 } }`. The website accepts newly discovered source URLs only through this authenticated research envelope. Legacy Claude mode returns the generated asset directly and does not research.
 
-Limits: 512 KB request, 5 seconds to upload, 80 seconds per Claude command, 1 MB combined command output, and up to one second to force-close an unresponsive child. An HTTP disconnect aborts the corresponding child. Shutdown cancels active jobs and waits for them to close. There is no automatic retry; retries must stay within the competition time budget.
+Clay calls `https://cc.getattn.io/api/assets`, not the worker. Vercel requires `ASSET_GENERATOR_URL` plus the matching private `ASSET_GENERATOR_TOKEN`; the caller supplies the primary `ASSET_API_KEY` or the additional `ASSET_OPERATOR_API_KEY` as its bearer key. `npm run asset:generate -- examples/requests/linear-live-test.json` reads the local private operator key automatically and defaults to the custom domain.
 
-Errors contain short codes only: `unauthorized`, `invalid_request`, `request_too_large`, `writer_busy`, `claude_generation_failed`, `generation_timeout`, and `generation_invalid_output`, among others. Raw CLI output, prompts, and secrets are not logged or returned on failure. Logs contain startup/readiness status only; there is no request log or persisted conversation in this service.
+The worker uses isolated temporary directories, read-only execution, no shell, no local file tools, no connectors, and no inherited user plugins or memories. Research gets hosted web search; the writer gets no tools. Sources are untrusted data, never instructions. Source fetches restrict public HTTPS targets, validate DNS, bound response size, and check redirect destinations. Hosting keys and the service token are not passed into model subprocesses.
 
-## Restricted generation
+HTTP input is capped at 512 KB with a five-second upload deadline. Model output is bounded to 1 MB. Disconnects cancel the request's children; shutdown cancels active jobs. The website's forwarding timeout is 90 seconds. Timeouts and invalid outputs return an error, not a generic asset. Normal logs omit raw prompts, process output, and credentials.
 
-The service launches Claude without a shell, passes prospect context through stdin, and uses an empty private temporary working directory. It disables built-in tools, MCP tools, skills, user customizations, Chrome, permission prompts, and session persistence. It does not pass hosting keys or the service token into the child environment. Authentication and normal model selection remain with Claude.
+## Acceptance checks before live use
 
-The model receives the supplied context only. It cannot browse LinkedIn or fetch branding. Supply real observations/source excerpts and approved brand URLs from Clay. A URL by itself is not verified evidence. A proposed solution is not a proven result, and matching the JSON schema does not prove factual accuracy.
+1. Send a genuine company prompt through the authenticated website API, with **no `example` field**.
+2. Verify `generationMode: agent`, inspect research counts/warnings, then open the published page and Markdown download.
+3. Check sources, recipient identity, claims, alternatives, CTA, and branding. Private scores, research seeds, classification labels, and Task 5 copy must not appear publicly.
+4. Measure multiple uncached requests from submission to a usable page. Treat 30–60 seconds as a target until the measurements support it; a fast error is not success.
+5. Replace the quick tunnel with an approved stable endpoint before depending on unattended availability.
 
-Structured output must have the exact six-part structure. Both the writer and website validate it, check reference URLs against supplied input, and prevent model-created gift approval. No fallback prose or authored Linear result can masquerade as newly generated content.
-
-These invocation choices follow the official [Claude CLI reference](https://code.claude.com/docs/en/cli-reference) and [structured-output documentation](https://code.claude.com/docs/en/headless). The local CLI help is checked at startup because flags vary by installed version.
-
-## Required live acceptance test
-
-1. On the approved machine, pass `worker:check` and start the service privately.
-2. Complete one real supplied-context request and inspect its sources, hypotheses, alternatives, CTA, and branding. Never count the fixture tests as this step.
-3. Connect the approved HTTPS service to the website. Submit the normal prompt-only JSON through the authenticated website API; inspect the published URL and Markdown download, not just a 200 response.
-4. Test three uncached real-company requests. Measure from request start through published-page verification. Include any evidence-gathering time separately and in the total workflow, since this writer itself does not research.
-5. Only claim the 120-second target after the measured runs support it. If a request is missing evidence or times out, report that; do not publish generic filler.
-
-Competition use still needs organizer approval and recreation within the monitored setup period. This code is a prototype, not evidence of that approval.
+Competition use still requires organizer approval and recreation within the monitored setup window. No gift purchasing is enabled.

@@ -11,7 +11,8 @@
     "verify": "npm run typecheck && npm run test && npm run worker:build && npm run build",
     "worker:build": "tsc -p worker/tsconfig.json",
     "worker:check": "node .worker-build/worker/main.js --check",
-    "worker:start": "node .worker-build/worker/main.js"
+    "worker:start": "node .worker-build/worker/main.js",
+    "asset:generate": "node scripts/generate-asset.mjs"
   },
   "dependencies": {
     "@vercel/blob": "^2.8.1",

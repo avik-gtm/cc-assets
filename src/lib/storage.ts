@@ -1,16 +1,16 @@
 import { list, put } from "@vercel/blob";
-import { assetDocumentSchema, type AssetDocument } from "@/lib/schemas";
+import type { AssetDocument } from "@/lib/schemas";
 import { getReferenceAssetBySlug } from "@/lib/examples/references";
-import { toPublicAsset } from "@/lib/public-asset";
+import { publicAssetSchema, toPublicAsset, type PublicAsset } from "@/lib/public-asset";
 
 type GlobalWithAssetStore = typeof globalThis & {
-  __enrichflowAssetStore?: Map<string, AssetDocument>;
+  __enrichflowAssetStore?: Map<string, PublicAsset>;
 };
 
-function memoryStore(): Map<string, AssetDocument> {
+function memoryStore(): Map<string, PublicAsset> {
   const globalObject = globalThis as GlobalWithAssetStore;
   if (!globalObject.__enrichflowAssetStore) {
-    globalObject.__enrichflowAssetStore = new Map<string, AssetDocument>();
+    globalObject.__enrichflowAssetStore = new Map<string, PublicAsset>();
   }
   return globalObject.__enrichflowAssetStore;
 }
@@ -26,12 +26,7 @@ export async function saveAsset(
 ): Promise<"blob" | "memory"> {
   // Blob objects are public. Never persist the operator-only hook or research
   // seeds there, even though the application also projects its public responses.
-  const publicRecord = assetDocumentSchema.parse({
-    ...toPublicAsset(asset),
-    generationMode: asset.generationMode,
-    task5Hook: "Withheld from public storage.",
-    warnings: [],
-  });
+  const publicRecord = toPublicAsset(asset);
   if (!durableStorageEnabled()) {
     if (process.env.VERCEL)
       throw new Error(
@@ -50,7 +45,7 @@ export async function saveAsset(
   return "blob";
 }
 
-export async function getAsset(slug: string): Promise<AssetDocument | null> {
+export async function getAsset(slug: string): Promise<AssetDocument | PublicAsset | null> {
   const reference = getReferenceAssetBySlug(slug);
   if (reference) return reference;
   const memoryAsset = memoryStore().get(slug);
@@ -65,5 +60,6 @@ export async function getAsset(slug: string): Promise<AssetDocument | null> {
 
   const response = await fetch(blob.url, { cache: "no-store" });
   if (!response.ok) return null;
-  return assetDocumentSchema.parse(await response.json());
+  // Also accepts older records: the public schema strips legacy private fields.
+  return publicAssetSchema.parse(await response.json());
 }

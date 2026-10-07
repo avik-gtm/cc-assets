@@ -39,7 +39,7 @@ You can include everything in `prompt`, or separate observations from reasoning 
 }
 ```
 
-These are placeholders to replace, not a ready-to-research company request. The writer does not fetch evidence from URLs automatically. The `signals` alias also accepts a string; use the canonical `signal` field above. Separate fields are optional.
+These are placeholders to replace, not a ready-to-research company request. The Codex worker adds bounded public research for company context, product-relevant evidence, and buyer context. It independently retrieves candidate sources and admits only matching excerpts. It does not guarantee access to LinkedIn or every supplied URL; your existing source text and dated observations remain valuable. The `signals` alias also accepts a string; use the canonical `signal` field above. Separate fields are optional.
 
 ## Simplest JSON body
 
@@ -58,15 +58,17 @@ Add **HTTP API** enrichment and use **Configure** (manual). Set:
 | Setting | Value for this project |
 | --- | --- |
 | Method | `POST` |
-| URL | `https://enrichflow-personalized-assets.vercel.app/api/assets` |
+| URL | `https://cc.getattn.io/api/assets` |
 | Content type | `application/json` |
-| Authentication | Saved HTTP API header account: `Authorization` = `Bearer [private asset API key]` |
+| Authentication | Saved HTTP API header account: `Authorization` = `Bearer [private primary or operator API key]` |
 | Body | `{"prompt":"/Asset context"}` with `/Asset context` inserted using Clay's actual column picker |
 | Output | Retain `success`, `assetUrl`, `task5Hook`, and `error` for inspection |
 
 The slash reference above is Clay configuration notation, not a literal value to send outside Clay. Preview the resolved body. String column references need quotes. Keep the key in the saved header account, not a prompt or visible table cell. These settings follow [Clay's HTTP API documentation](https://university.clay.com/docs/http-api-integration-overview). This guide uses manual setup and does not require Sculptor.
 
-After the separate generator is connected, test one row first. Inspect `success` and open its `assetUrl` before running more. Do not claim a successful 200 reference test verifies model generation. Competition use still requires organizer approval and recreation in the monitored window.
+The primary `ASSET_API_KEY` is preserved in Vercel but masked; `.env.local` does not contain its usable value. The additional `ASSET_OPERATOR_API_KEY` is stored privately in `.env.operator.local` and is accepted by the same endpoint. Never print or put it in JSON. For a local test that reads the key automatically, run `npm run asset:generate -- examples/requests/linear-live-test.json`, or substitute your own request JSON path.
+
+Test one row first. **Omit `example` for real generation**; an example request returns fixed authored content. Inspect `success`, research coverage, and warnings, then open `assetUrl` before running more. Competition use still requires organizer approval and recreation in the monitored window.
 
 ## Optional gift offer and CTA destination
 
@@ -95,5 +97,12 @@ The API's successful response includes:
 - `task5Hook`: a separate private starting point for your outbound email.
 - `generationMode`: `agent` for genuinely generated content, `reference` for the bundled example.
 - `executionTimeMs`: the measured request duration.
+- `generation.researchMode`: `parallel_public_research` for the Codex worker.
+- `generation.verifiedSourceCount` and `generation.completedResearchBranches`: admitted sources and completed assignments, not a guarantee that every desired fact was found.
+- `warnings`: private research limitations. An incomplete branch does not mean the prospect lacks that characteristic.
 
-**Current status:** the page and reference are live, but the separate content generator is not connected. New-company requests currently return 503 (`generation_not_configured`) after authentication. A 401 means the caller key is missing/wrong, not that JSON is wrong. Do not run a batch yet. The under-120-second target remains unverified.
+**Current setup:** Vercel is connected to the separate signed-in Codex worker through a temporary Cloudflare quick tunnel. The Mac must stay awake/online and the tunnel running. A Dot is not configured and does not sit in the timed path. The research budget is 20 seconds shared across three parallel branches, followed by a 30-second writing deadline; these are limits, not proof of a successful 30–60-second run. Measure real requests and inspect their content. Do not count a fast error or authored reference as success.
+
+A `401` means the caller key is missing/wrong, not that JSON is wrong. A `503` means generation could not finish; the API publishes no generic fallback. Start with one row: the worker accepts one asset request at a time by default. See [worker setup](../worker/README.md) for the temporary endpoint's availability limits.
+
+`cc.getattn.io` is live and verified for DNS/HTTPS, health, and both examples. Use it as the primary Clay hostname. See [custom-domain details](CUSTOM_DOMAIN_SETUP.md). Generation quality and timing still require inspection of real output, not only a healthy website.

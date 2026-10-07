@@ -1,20 +1,10 @@
-import type { AssetDocument } from "@/lib/schemas";
-
-export type PublicAsset = Omit<
-  AssetDocument,
-  | "task5Hook"
-  | "warnings"
-  | "generationMode"
-  | "companyLinkedInUrl"
-  | "personLinkedInUrl"
-  | "sections"
-  | "evidence"
-> & {
-  sections: (Omit<AssetDocument["sections"][number], "items"> & {
-    items: Omit<AssetDocument["sections"][number]["items"][number], "classification">[];
-  })[];
-  evidence: Omit<AssetDocument["evidence"][number], "classification">[];
-};
+import { z } from "zod";
+import {
+  assetDocumentSchema,
+  evidenceSchema,
+  sectionSchema,
+  type AssetDocument,
+} from "@/lib/schemas";
 
 function withoutClassification<T extends { classification?: string }>(item: T): Omit<T, "classification"> {
   const { classification, ...publicItem } = item;
@@ -22,39 +12,50 @@ function withoutClassification<T extends { classification?: string }>(item: T): 
   return publicItem;
 }
 
-// Keep operator handoff and research seeds off the page, download, and public JSON.
-// Call this on the server before passing any props into client components.
-export function toPublicAsset(asset: AssetDocument): PublicAsset {
-  const {
-    task5Hook,
-    warnings,
-    generationMode,
-    companyLinkedInUrl,
-    personLinkedInUrl,
-    ...publicAsset
-  } = asset;
-  void task5Hook;
-  void warnings;
-  void generationMode;
-  void companyLinkedInUrl;
-  void personLinkedInUrl;
-  return {
-    ...publicAsset,
-    sections: asset.sections.map((section) => ({
-      ...section,
-      items: section.items.map(withoutClassification),
-    })),
-    evidence: asset.evidence.map(withoutClassification),
+// Public records have their own validation boundary: private evidence classes
+// must not be required (or restored) when loading an already-redacted document.
+// The original section schema still validates table row shapes before projection.
+export const publicAssetSchema = assetDocumentSchema
+  .omit({
+    task5Hook: true,
+    warnings: true,
+    generationMode: true,
+    companyLinkedInUrl: true,
+    personLinkedInUrl: true,
+    evidence: true,
+    sections: true,
+  })
+  .extend({
+    evidence: z.array(evidenceSchema.omit({ classification: true })).max(8),
+    sections: z
+      .array(
+        sectionSchema.transform((section) => ({
+          ...section,
+          items: section.items.map(withoutClassification),
+        })),
+      )
+      .min(2)
+      .max(8),
+  })
+  .transform((asset) => ({
+    ...asset,
     gift:
       asset.gift.status === "included" && asset.gift.claimUrl
         ? {
-            status: "included",
+            status: "included" as const,
             title: asset.gift.title,
             message: asset.gift.message,
             claimUrl: asset.gift.claimUrl,
           }
-        : { status: "omitted" },
-  };
+        : { status: "omitted" as const },
+  }));
+
+export type PublicAsset = z.infer<typeof publicAssetSchema>;
+
+// Keep operator handoff and research seeds off the page, download, and public JSON.
+// Call this on the server before passing any props into client components.
+export function toPublicAsset(asset: AssetDocument | PublicAsset): PublicAsset {
+  return publicAssetSchema.parse(asset);
 }
 
 export function assetToMarkdown(asset: PublicAsset): string {

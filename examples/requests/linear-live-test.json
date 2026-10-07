@@ -1,0 +1,11 @@
+{
+  "productDescription": "SupportLoop is a fictional practice platform that helps B2B software support teams organize repeat questions into reusable guidance, with escalation to people when needed.",
+  "companyName": "Linear",
+  "companyDomain": "linear.app",
+  "universe": "B2B software companies with customer-facing product workflows. This is a practice account, not a verified qualified lead.",
+  "signal": "Research Linear's publicly documented product workflows. No hiring counts, ticket counts, customer complaints or support performance have been supplied or verified.",
+  "signalLogic": "More product workflows may create more support questions. That is a hypothesis to test, not proof of support pressure at Linear.",
+  "icp": "The leader responsible for customer support or customer experience. Do not invent a person's name.",
+  "sourceUrls": ["https://linear.app", "https://linear.app/docs"],
+  "prompt": "Create a useful prospect-facing support improvement brief, not an email. Follow the six-part layout: headline, current situation, likely problem, solution, alternative approaches, CTA. Include a small concrete support-triage pilot using real publicly verified product context where available. Compare self-service documentation, adding staff and our fictional SupportLoop platform fairly. Do not invent savings, testimonials, current jobs, existing customer relationships or measured outcomes. No gift offer. Make conditional recommendations where facts are unavailable. Clearly identify fictional seller/practice context in the use note."
+}

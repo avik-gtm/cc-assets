@@ -1,58 +1,62 @@
-# Clay contract and current limits
+# Clay setup: test one real prospect
 
-## Test the authored reference
+The website forwards to a separate **Codex research-and-writing worker**, not Vercel AI Gateway. A Dot is not configured or required for this request path. The current worker connection uses a temporary tunnel to the signed-in Mac: keep the Mac and tunnel online. This is a test connection, not guaranteed production availability. See [worker operations and limits](../worker/README.md).
 
-POST `/api/assets` with `Content-Type: application/json` and:
+## Configure the HTTP request
 
-```json
-{ "example": "linear-support" }
+| Setting | Value |
+|---|---|
+| Method | `POST` |
+| URL | `https://cc.getattn.io/api/assets` |
+| Content type | `application/json` |
+| Saved authentication header | `Authorization: Bearer [private primary or operator API key]` |
+| Body | `{"prompt":"[context from the current Clay row]"}` |
+
+Use Clay's actual column picker and preview the resolved JSON. Do not send literal bracket placeholders, concatenate unescaped JSON, or put secrets in table cells/prompts. The original `ASSET_API_KEY` is preserved in Vercel but sensitive/masked; `.env.local` does not contain its usable value. A dedicated `ASSET_OPERATOR_API_KEY` is also accepted and stored privately in `.env.operator.local`. Use a saved HTTP account for the chosen caller key. Do not pass the worker service token to Clay.
+
+To test from this checkout without displaying a secret, the helper reads the private operator key and defaults to `https://cc.getattn.io`:
+
+```sh
+npm run asset:generate -- examples/requests/linear-live-test.json
 ```
 
-This explicitly returns the saved reference. It does not interpret a company prompt or perform new research. The response says `generationMode: reference` and `storage: bundled` and includes a hosted `assetUrl`.
+For your own prospect, replace the argument with a request JSON file using the format below. This makes a real generation request, not an authored-reference lookup.
 
-## Plain-language input for live generation
-
-The API accepts `{"prompt":"..."}` or a plain-text body. Structured company fields are optional. You do not need to manually construct the full asset schema.
-
-Five practical inputs in one prompt (you do not need to construct the output schema):
+One prompt can contain everything:
 
 ```text
-Product: [Seller, what it does, and the problem it helps solve]
-Prospect: [Recipient company and domain if known]
-Buyer: [Selected person's role; name optional]
-Observed facts: [Signal, data, source text, and source URLs; identify unknowns]
-My reasoning: [Why this matters to the buyer; distinguish hypothesis from fact]
-Create a personalized brief: headline, current situation, likely problem, solution, alternative options, CTA.
-Include our product as one honest alternative; offer a walkthrough of something specific.
-No email subject, greeting, or sign-off. Do not invent similar-company evidence or gift approval.
-Keep my scoring, qualification notes, and outreach draft private.
+Seller/product: [what we sell and verified capabilities]
+Prospect: [company name and domain]
+Universe/ICP: [why this type of account is relevant]
+Buyer: [role; person's name/profile optional]
+Signals: [actual observations, counts, dates, source URLs and supporting text]
+My reasoning: [why the signals may matter, not a claim of proven internal pain]
+What we can show: [specific demo, audit, or walkthrough]
+Find relevant missing public context, then create our six-part prospect-facing brief.
+Keep targeting, scoring, internal classifications, and the outbound draft private.
 ```
 
-Task 1 universe filters, scores, scoring logic, company/person LinkedIn URLs, a preferred asset type, or approved logo URL/colors are optional additions. The generator uses those to select the work, not to publish your qualification logic. A successful response supplies `assetUrl` for Task 4 and a separate `task5Hook` for Task 5. See [the practical JSON guide](CLAY_REQUEST_GUIDE.md), including optional gift offers and CTA links.
+You do not need to construct the output schema. Separate optional fields are explained in [the request guide](CLAY_REQUEST_GUIDE.md).
 
-POST to `https://enrichflow-personalized-assets.vercel.app/api/assets` with `Content-Type: application/json` and `Authorization: Bearer [your private API key]`. Body: `{"prompt":"the context above"}`. Let your HTTP client serialize it—do not manually concatenate unescaped JSON. `/` offers a payload builder that copies valid JSON; it does not call the API or expose credentials.
+## Verify the result
 
-**Current limitation:** the separate content generator is not connected yet. AI Gateway has been removed; no Vercel model billing or payment setup is needed. New-company requests return an explicit 503 until the connection is verified. The authored reference remains readable.
+For a real run, **omit `example`**. That field selects a fixed authored reference and bypasses generation.
 
-The writer contract uses only supplied context. It does not retrieve source URLs or inspect websites. Missing evidence must yield a proposed plan, not fabricated findings. See `examples/requests/accessproof-northstar.json` for a prompt-only request example; its historical failed run is not evidence of a generated result.
+After one request, check:
 
-## Service contract
+- `success: true`, `generationMode: agent`, and a working `assetUrl`.
+- `generation.researchMode`, `verifiedSourceCount`, and `completedResearchBranches` for actual research coverage. An incomplete branch means research did not supply verified evidence for that assignment within the deadline, not that the prospect lacks the characteristic.
+- `warnings` for limitations and `executionTimeMs` for measured request time. The 30–60-second target is not a guarantee.
+- The page and its Markdown download: correct prospect, useful content, supported claims, and no private targeting data.
 
-The separate service receives `systemPrompt`, `input`, and the `GeneratedAsset` JSON schema. It must return a valid JSON object directly. The adapter allows 90 seconds, requires HTTPS and private authentication for hosted requests, forbids redirects, bounds output to 1 MB, and rejects invalid output or unsupplied source URLs. It does not automatically supply web-research or model credentials.
+`task5Hook` is a separate private outbound starting point. It is not part of the public asset. The finished asset has headline → current situation → likely problem → solution → alternatives → CTA.
 
-Required for hosted new-company generation:
+The worker launches three parallel research branches and a writer. It may proceed using supplied context when public research is unavailable, and it never treats inaccessible LinkedIn pages or an inferred pain as a verified finding. Supplying good existing evidence makes the result stronger and reduces dependence on fresh research.
 
-- `ASSET_GENERATOR_URL` and `ASSET_GENERATOR_TOKEN` for the separate writer. These are server-only settings, not fields to put in each Clay row.
-- `ASSET_API_KEY` for authenticated Clay POSTs: `Authorization: Bearer [key]`.
-- `BLOB_READ_WRITE_TOKEN` or the supported linked Blob configuration for durable generated assets.
-- `NEXT_PUBLIC_APP_URL` set to the actual deployed origin if an override is needed; never set it to localhost in production.
+A `401` means the caller key is missing or wrong. A `503` means the generation service could not complete the request; no generic placeholder is published. Test one row before a batch; the worker accepts one asset job at a time by default.
 
-On Vercel, POST is denied when `ASSET_API_KEY` is absent. The public operator form intentionally does not store the key. Use Clay's credential mechanism for production requests. Public asset pages and downloads contain recipient content only; the POST response includes `task5Hook` for the operator.
+## Custom domain
 
-The API key is a sensitive Vercel secret and cannot be recovered via `env pull` (the local value is blank). Use the existing key from its approved secure location; if unavailable, coordinate a replacement with the owner and update Clay at the same time. Do not rotate a potentially used key silently, paste keys into chat, or commit them.
+`cc.getattn.io` is live: DNS, HTTPS, the health endpoint, and both example pages were verified. Use `https://cc.getattn.io/api/assets`. The original Vercel hostname remains available. See [custom-domain details](CUSTOM_DOMAIN_SETUP.md).
 
-The public reference needs none of these secrets or storage services. Its data is bundled with the app.
-
-## Competition constraints
-
-Get the organizer's approval for the idea and runtime, then recreate the approved setup during the monitored window. Do not treat an existing deployment or this setup document as permission to use it on stage. No gift purchases are enabled.
+Competition use requires organizer approval and recreation in the monitored setup window. Gift offers require explicit approval; no purchasing or redeemable gift issuance is enabled.
