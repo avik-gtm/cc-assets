@@ -24,7 +24,7 @@ export const linearSupportAsset = assetDocumentSchema.parse({
   preparedBy: "SupportLoop · independent concept",
   documentLabel: "Operations / Onboarding",
   useNote:
-    "An independent working draft built from public documentation. Product steps are sourced; routing and training are proposals for your team to approve. No access to your tickets, internal procedures, or performance data.",
+    "Based on public product documentation, not internal ticket data. Routing and training are proposed practices for your team to approve.",
   executiveSummary:
     "Use the playcards to distinguish configuration questions from exceptions, the matrix to assign the next owner, and the handoff template to record a reproducible case. The practice plan ties each workflow to a reviewable output.",
   nonObviousInsight:
@@ -45,7 +45,24 @@ export const linearSupportAsset = assetDocumentSchema.parse({
           usage:
             "Use when a customer says a teammate has not received an invitation.",
           description:
-            "First check: identify the provisioning method.\n\nSCIM workspace → have the identity-provider administrator check member/admin provisioning. Guest invitations are a separate path.\n\nNon-SCIM workspace → an authorized workspace admin checks the address and pending invitation in Settings → Administration → Members. If delivery is filtered, the email administrator can allow notifications@linear.app and pm_bounces@pm-bounces.linear.app.\n\nStill blocked → record the affected identity, approximate invite time, method, and redacted error in an approved support channel. Do not collect passwords or sign-in links.",
+            "First check: identify the provisioning method, then follow the matching path.",
+          procedure: [
+            {
+              label: "SCIM workspace",
+              instruction:
+                "Ask the identity-provider administrator to check member/admin provisioning. Guest invitations follow a separate path.",
+            },
+            {
+              label: "Non-SCIM workspace",
+              instruction:
+                "An authorized admin checks the address and pending invitation in Settings → Administration → Members. If email is filtered, the email administrator can allow notifications@linear.app and pm_bounces@pm-bounces.linear.app.",
+            },
+            {
+              label: "Still blocked",
+              instruction:
+                "Record the affected identity, approximate invite time, provisioning method, and redacted error in an approved support channel. Never collect passwords or sign-in links.",
+            },
+          ],
           checks: [
             "Confirm the requester is authorized before discussing workspace membership.",
             "Check the workspace's provisioning path before recommending another invitation.",
@@ -57,7 +74,24 @@ export const linearSupportAsset = assetDocumentSchema.parse({
           usage:
             "Use when a guest reports missing issues in a project spanning multiple teams.",
           description:
-            "First check: identify the team that owns the missing issue and the guest's team membership.\n\nGuest outside the issue's team → the limited visibility may be expected. A cross-team project can be visible without all of its teams' issues being visible. Ask the appropriate owner to confirm intended access.\n\nGuest already has access → capture the issue reference, expected access, and a redacted screenshot for product support.\n\nBoundary → do not broaden a workspace role merely to troubleshoot, or disclose private issue content to an unauthorized guest.",
+            "First check: identify the team that owns the missing issue and the guest's team membership.",
+          procedure: [
+            {
+              label: "Outside the issue's team",
+              instruction:
+                "Limited visibility may be expected: seeing a cross-team project does not grant access to every team's issues. Ask the appropriate owner to confirm intended access.",
+            },
+            {
+              label: "Access already granted",
+              instruction:
+                "Capture the issue reference, expected access, and a redacted screenshot for product support.",
+            },
+            {
+              label: "Access boundary",
+              instruction:
+                "Do not broaden a workspace role just to troubleshoot, or disclose private issue content to an unauthorized guest.",
+            },
+          ],
           checks: [
             "Confirm which team owns the missing issue and whether the requester may access it.",
             "Do not reproduce private issue content in a reply to an unauthorized guest.",
@@ -69,7 +103,24 @@ export const linearSupportAsset = assetDocumentSchema.parse({
           usage:
             "Use when a customer can find an issue in Triage but not in a normal view.",
           description:
-            "First check: compare the issue's current status with the view's active filters.\n\nIssue still in Triage → exclusion from a normal view can be expected. Triage issues are excluded from views by default. Add Triage to a custom view's status filter if that view should include them.\n\nIssue ready for the workflow → the triage owner reviews and accepts it. Do not change status solely to make a screenshot match.\n\nStill unexplained → record the issue and view references, filters, and steps to reproduce before treating it as a suspected defect.",
+            "First check: compare the issue's current status with the view's active filters.",
+          procedure: [
+            {
+              label: "Still in Triage",
+              instruction:
+                "Triage issues are excluded from views by default. Include Triage in a custom view's status filter if that view should display them.",
+            },
+            {
+              label: "Ready for the workflow",
+              instruction:
+                "The triage owner reviews and accepts the issue. Do not change status solely to make a screenshot match.",
+            },
+            {
+              label: "Still unexplained",
+              instruction:
+                "Record the issue and view references, filters, and reproduction steps before treating it as a suspected defect.",
+            },
+          ],
           checks: [
             "Confirm the issue's current status and the view filters.",
             "Do not change issue status simply to make a screenshot match.",

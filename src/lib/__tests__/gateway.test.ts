@@ -62,4 +62,39 @@ describe("direct Gateway generation", () => {
       generateAsset(assetRequestSchema.parse({ prompt: "AccessProof kit" })),
     ).rejects.toThrow("No placeholder was published");
   });
+
+  it("identifies the specific Gateway verification response without exposing the raw error", async () => {
+    vi.stubEnv("AI_GATEWAY_MODEL", "provider/test-model");
+    vi.stubEnv("ASSET_GENERATOR_URL", "");
+    vi.mocked(generateText).mockRejectedValue(
+      Object.assign(
+        new Error(
+          "AI Gateway requires a valid credit card on file. PRIVATE_PROVIDER_DETAILS",
+        ),
+        { statusCode: 403 },
+      ),
+    );
+    const error = await generateAsset(
+      assetRequestSchema.parse({ prompt: "AccessProof kit" }),
+    ).catch((e) => e);
+    expect(error.code).toBe("gateway_verification_required");
+    expect(error.message).toContain("model-service setup");
+    expect(error.message).not.toContain("PRIVATE_PROVIDER_DETAILS");
+  });
+
+  it.each([401, 403, 429, 500])(
+    "does not label a generic %s as a payment problem",
+    async (statusCode) => {
+      vi.stubEnv("AI_GATEWAY_MODEL", "provider/test-model");
+      vi.stubEnv("ASSET_GENERATOR_URL", "");
+      vi.mocked(generateText).mockRejectedValue(
+        Object.assign(new Error("Provider denied request"), { statusCode }),
+      );
+      const error = await generateAsset(
+        assetRequestSchema.parse({ prompt: "AccessProof kit" }),
+      ).catch((e) => e);
+      expect(error.code).toBe("generation_failed");
+      expect(error.message).not.toMatch(/billing|payment|credit card/);
+    },
+  );
 });

@@ -21,7 +21,8 @@ Missing evidence should narrow the scope or result in a clearly limited workshee
 PRESENTATION
 Use the prospect's verified logo/colors where available. preparedBy must identify the actual sender, not automatically EnrichFlow. title should promise the useful deliverable, not 'Company Growth Brief.'
 Use sections in recipient-first order. Use table (columns + equal-length cells arrays), checklist (checks arrays), cards, steps, or narrative (copyable working template). The replies layout is legacy compatibility only; do not choose it for new assets. value is an optional finding or result, never an email subject. navigationLabel is a short, descriptive contents label.
-The first section should contain the useful work. The document displays core sections openly; supporting sources can be collapsed. Do not create empty sections or filler statistics.
+The first section should contain the useful work. For diagnostic or conditional instructions, use item.procedure with short labels and actionable instructions instead of burying multiple branches in a long description. This is optional; comparisons and other asset types do not need it.
+The document displays core sections openly, source links alongside items, and compact references at the end. Do not add a 'Sources & assumptions' section or repeat long disclaimers. Keep one concise useNote and label proposals or uncertainty next to the affected recommendation. Do not create empty sections or filler statistics.
 All text is plain text. No HTML or scripts. References must be HTTPS. Use source.note to explain what each source supports and checkedAt only if the source was actually checked on that date.
 useNote should state limitations honestly. Internal service warnings belong only in warnings, never in the recipient copy.
 Do not copy the reference's company details or fixed counts into another company.

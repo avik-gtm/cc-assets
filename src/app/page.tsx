@@ -65,18 +65,27 @@ export default function HomePage() {
         </p>
       </section>
       <section className="generation-status" aria-labelledby="status-title">
-        <h2 id="status-title">Last live test: generation blocked</h2>
+        <h2 id="status-title">Model connection: setup still required</h2>
         <p>
-          On October 7, the AccessProof request reached the model service, but
-          Vercel AI Gateway required billing verification (a valid payment
-          method). No AccessProof asset was created. The problem was not the
-          prompt or JSON shape.
+          Last checked October 7, 2026, against this project in Avik Ghimire’s
+          projects. Hosting is working. A fresh model test returned AI Gateway’s
+          “valid credit card on file” verification requirement. This is specific
+          to the model service—not an overdue hosting bill or a different Vercel
+          account.
         </p>
         <p>
-          Hosting and the authored reference work. New AI generation still needs
-          an authorized model service and a matching private API credential in
-          Clay. No billing changes have been made. Successful generation under
-          120 seconds has not been verified.
+          The original GTM playbook uses a local Claude worker, so it does not
+          test this new Gateway connection. The workspace owner can review{" "}
+          <a
+            href="https://vercel.com/avik-ghimires-projects/~/ai-gateway"
+            target="_blank"
+            rel="noreferrer"
+          >
+            AI Gateway setup
+          </a>{" "}
+          or connect an approved alternative. No payment settings were changed,
+          and no AccessProof asset was generated. The two-minute target is still
+          unverified.
         </p>
       </section>
       <DemoForm />

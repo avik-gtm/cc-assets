@@ -32,6 +32,7 @@ describe("recipient-first support reference", () => {
     expect(playcards).toHaveLength(3);
     for (const card of playcards) {
       expect(card.description).toContain("First check:");
+      expect(card.procedure).toHaveLength(3);
       expect(card.description).not.toMatch(/Hi \[first name\]|Subject:/);
       expect(
         linearSupportAsset.sources.some(
@@ -62,7 +63,7 @@ describe("recipient-first support reference", () => {
     );
     expect(html).toContain("linear-wordmark-dark.svg");
     expect(html.indexOf("The invitation that never arrived")).toBeLessThan(
-      html.indexOf("<h2>Sources &amp; assumptions"),
+      html.indexOf('aria-label="Reference links"'),
     );
     expect(html).not.toMatch(
       /Qualification context|Priority score|Task 5|matched the supplied universe|PRIVATE_/,
@@ -70,9 +71,38 @@ describe("recipient-first support reference", () => {
     expect(html).toContain("Not an official");
     expect(html).toContain("Document contents");
     expect(html).toContain("Implementation notes");
+    expect(html).toContain("decision-path");
+    expect(html).toContain("Non-SCIM workspace");
+    expect(html).not.toMatch(
+      /Sources &amp; assumptions|source-chapter|href="#sources"/,
+    );
     expect(html).not.toMatch(
       /Response draft|Subject<|Hi \[first name\]|Open the kit|Take the kit|Less blank page|Before sending|message-window/,
     );
+  });
+
+  it("retains classified evidence and references without a separate sources chapter", () => {
+    const asset = toPublicAsset({
+      ...linearSupportAsset,
+      evidence: [
+        {
+          label: "Proposed owner",
+          value: "Support lead",
+          detail: "A suggestion, not a verified internal role.",
+          classification: "inference",
+          sourceUrl: "https://example.com/supplied-reference",
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(createElement(AssetView, { asset }));
+    expect(html).toContain("Background for these recommendations");
+    expect(html).toContain("inference");
+    expect(html).toContain("A suggestion, not a verified internal role.");
+    expect(html).toContain("https://example.com/supplied-reference");
+    expect(html).not.toContain("Sources &amp; assumptions");
+    const markdown = assetToMarkdown(asset);
+    expect(markdown).toContain("[inference]");
+    expect(markdown).toContain("SCIM workspace:");
   });
 
   it("exports the actual content, ownership matrix and sources without private fields", () => {

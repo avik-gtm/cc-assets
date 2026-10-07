@@ -266,8 +266,7 @@ summary::-webkit-details-marker {
   color: var(--muted);
 }
 .chapter h2,
-.implementation-notes h2,
-.source-chapter h2 {
+.implementation-notes h2 {
   margin: 0;
   font-size: 21px;
   letter-spacing: -0.03em;
@@ -327,6 +326,29 @@ summary::-webkit-details-marker {
   line-height: 1.85;
   color: #454955;
   margin: 15px 0 0;
+  overflow-wrap: anywhere;
+}
+.decision-path {
+  margin: 20px 0 0;
+  border-top: 1px solid var(--line);
+}
+.decision-path > div {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 24px;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--line);
+}
+.decision-path dt {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.8;
+}
+.decision-path dd {
+  margin: 0;
+  color: #454955;
+  font-size: 12px;
+  line-height: 1.8;
   overflow-wrap: anywhere;
 }
 .template-text {
@@ -459,40 +481,29 @@ tr:last-child th {
   line-height: 1.8;
   color: #545866;
 }
-.source-chapter {
-  padding-block: 24px;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-.source-chapter > summary {
+.reference-links {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.source-list article {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  padding: 21px 0;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  padding: 22px 0;
   border-bottom: 1px solid var(--line);
+  color: var(--muted);
 }
-.source-list a {
-  font-size: 12px;
-  font-weight: 600;
-}
-.source-list p,
-.source-list > p {
-  font-size: 11px;
+.reference-links a {
+  font-size: 10px;
   line-height: 1.8;
-  color: var(--muted);
-  margin-bottom: 0;
 }
-.source-list time {
-  font:
-    10px/2 ui-monospace,
-    monospace;
+.supporting-detail {
+  margin-block: 20px;
+}
+.supporting-detail > summary {
+  font-size: 11px;
+  list-style: disclosure-closed;
+  margin-left: 15px;
   color: var(--muted);
-  flex-shrink: 0;
+}
+.supporting-detail[open] > summary {
+  list-style: disclosure-open;
 }
 .editor-note {
   font-size: 12px;
@@ -740,6 +751,11 @@ tr:last-child th {
   .module-card {
     padding: 19px;
   }
+  .decision-path > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    padding-block: 14px;
+  }
   .module-grid.checklist {
     grid-template-columns: 1fr;
   }
@@ -754,7 +770,6 @@ tr:last-child th {
   .implementation-notes {
     padding: 20px;
   }
-  .source-list article,
   .asset-footer {
     flex-direction: column;
     gap: 10px;
@@ -802,7 +817,7 @@ tr:last-child th {
   table {
     min-width: 0;
   }
-  .source-chapter::details-content {
+  .supporting-detail::details-content {
     content-visibility: visible;
   }
 }

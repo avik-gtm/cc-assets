@@ -60,6 +60,10 @@ export function assetToMarkdown(asset: PublicAsset): string {
         item.value || "",
         item.description,
       );
+      if (item.procedure)
+        lines.push(
+          ...item.procedure.map((step) => `${step.label}: ${step.instruction}`),
+        );
       if (item.cells)
         item.cells.forEach((cell, index) =>
           lines.push(`${section.columns?.[index] || "Detail"}: ${cell}`),
@@ -73,17 +77,30 @@ export function assetToMarkdown(asset: PublicAsset): string {
     "",
     "## Implementation notes",
     "",
+    asset.nonObviousInsight,
+    "",
     ...asset.recommendedActions.map((action) => `- ${action}`),
   );
-  lines.push(
-    "",
-    "## Sources",
-    "",
-    ...asset.sources.map(
-      (source) =>
-        `- ${source.label}: ${source.url}${source.checkedAt ? ` (checked ${source.checkedAt})` : ""}`,
-    ),
-  );
+  if (asset.evidence.length)
+    lines.push(
+      "",
+      "### Background for these recommendations",
+      "",
+      ...asset.evidence.map(
+        (item) =>
+          `- [${item.classification}] ${item.label}: ${item.value}. ${item.detail}${item.sourceUrl ? ` Source: ${item.sourceUrl}` : ""}`,
+      ),
+    );
+  if (asset.sources.length)
+    lines.push(
+      "",
+      "### Reference links",
+      "",
+      ...asset.sources.map(
+        (source) =>
+          `- ${source.label}: ${source.url}${source.checkedAt ? ` (checked ${source.checkedAt})` : ""}${source.note ? ` — ${source.note}` : ""}`,
+      ),
+    );
   lines.push(
     "",
     asset.preparedBy ? `Prepared by ${asset.preparedBy}.` : "",

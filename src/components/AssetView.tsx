@@ -64,6 +64,16 @@ function SectionContents({ section }: { section: AssetSection }) {
           <p className={isTemplate ? "template-text" : "item-description"}>
             {item.description}
           </p>
+          {item.procedure?.length ? (
+            <dl className="decision-path">
+              {item.procedure.map((step, stepIndex) => (
+                <div key={stepIndex}>
+                  <dt>{step.label}</dt>
+                  <dd>{step.instruction}</dd>
+                </div>
+              ))}
+            </dl>
+          ) : null}
           {item.checks?.length ? (
             <PracticeChecklist items={item.checks} group={item.title} />
           ) : null}
@@ -71,7 +81,13 @@ function SectionContents({ section }: { section: AssetSection }) {
             <div className="module-actions">
               {isTemplate ? (
                 <CopyButton
-                  text={[item.value, item.description]
+                  text={[
+                    item.value,
+                    item.description,
+                    ...(item.procedure?.map(
+                      (step) => `${step.label}: ${step.instruction}`,
+                    ) || []),
+                  ]
                     .filter(Boolean)
                     .join("\n\n")}
                   label="Copy template"
@@ -79,7 +95,7 @@ function SectionContents({ section }: { section: AssetSection }) {
               ) : null}
               {item.sourceUrl ? (
                 <a href={item.sourceUrl} target="_blank" rel="noreferrer">
-                  Source ↗
+                  View reference ↗
                 </a>
               ) : null}
             </div>
@@ -137,9 +153,6 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
             <a className="supporting-link" href="#implementation">
               Implementation notes
             </a>
-            <a className="supporting-link" href="#sources">
-              Sources & assumptions
-            </a>
           </nav>
           <p className="sidebar-credit">
             {asset.preparedBy || "Independently prepared"}
@@ -169,6 +182,10 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
               <p>
                 {asset.useNote ||
                   "A proposed working document. Validate assumptions against current evidence and internal policies before use."}
+                {!asset.sources.length &&
+                !asset.evidence.some((item) => item.sourceUrl)
+                  ? " No verified source material supplied."
+                  : null}
               </p>
             </div>
             <p className="document-summary">{asset.executiveSummary}</p>
@@ -196,18 +213,16 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
 
           <section className="implementation-notes" id="implementation">
             <h2>Implementation notes</h2>
+            <p className="editor-note">{asset.nonObviousInsight}</p>
             <ol>
               {asset.recommendedActions.map((action) => (
                 <li key={action}>{action}</li>
               ))}
             </ol>
           </section>
-          <details className="source-chapter" id="sources" open>
-            <summary>
-              <h2>Sources & assumptions</h2>
-              <span aria-hidden="true">±</span>
-            </summary>
-            {asset.evidence.length ? (
+          {asset.evidence.length ? (
+            <details className="supporting-detail">
+              <summary>Background for these recommendations</summary>
               <div className="evidence-list">
                 {asset.evidence.map((item) => (
                   <article key={item.label}>
@@ -226,33 +241,8 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
                   </article>
                 ))}
               </div>
-            ) : null}
-            <div className="source-list">
-              {asset.sources.length ? (
-                asset.sources.map((source) => (
-                  <article key={source.url}>
-                    <div>
-                      <a href={source.url} target="_blank" rel="noreferrer">
-                        {source.label} ↗
-                      </a>
-                      <p>{source.note}</p>
-                    </div>
-                    {source.checkedAt ? (
-                      <time dateTime={source.checkedAt}>
-                        Checked {source.checkedAt}
-                      </time>
-                    ) : null}
-                  </article>
-                ))
-              ) : (
-                <p>
-                  No verified source material supplied. This is a proposed plan,
-                  not a completed investigation.
-                </p>
-              )}
-            </div>
-            <p className="editor-note">{asset.nonObviousInsight}</p>
-          </details>
+            </details>
+          ) : null}
           {asset.gift.status === "included" && asset.gift.claimUrl ? (
             <section className="gift-section">
               <h2>{asset.gift.title}</h2>
@@ -261,6 +251,26 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
                 View gift ↗
               </a>
             </section>
+          ) : null}
+          {asset.sources.length ? (
+            <nav className="reference-links" aria-label="Reference links">
+              {asset.sources.map((source) => (
+                <a
+                  href={source.url}
+                  key={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={[
+                    source.note,
+                    source.checkedAt ? `Checked ${source.checkedAt}` : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" · ")}
+                >
+                  {source.label} ↗
+                </a>
+              ))}
+            </nav>
           ) : null}
           <footer className="asset-footer">
             <span>{asset.preparedBy || "Independently prepared"}</span>

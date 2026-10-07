@@ -75,9 +75,11 @@ export async function POST(request: NextRequest) {
     const message =
       error instanceof Error ? error.message : "Unknown generation error.";
     const details = error instanceof ZodError ? error.issues : undefined;
+    const code =
+      error instanceof GenerationUnavailableError ? error.code : undefined;
     console.error("asset_generation_failed", { message, details });
     return NextResponse.json(
-      { success: false, error: message, details },
+      { success: false, error: message, code, details },
       {
         status:
           error instanceof ZodError

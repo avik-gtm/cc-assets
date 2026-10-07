@@ -50,10 +50,10 @@ export const assetRequestSchema = z
     const hasPrompt = Boolean(value.prompt?.trim());
     const hasStructuredContext = Boolean(
       value.productDescription ||
-      value.universe ||
-      value.signal ||
-      value.companyDomain ||
-      value.companyName,
+        value.universe ||
+        value.signal ||
+        value.companyDomain ||
+        value.companyName,
     );
 
     if (!hasPrompt && !hasStructuredContext && !value.example) {
@@ -88,6 +88,16 @@ export const sectionItemSchema = z.object({
   classification: evidenceClassSchema.optional(),
   sourceUrl: optionalUrl,
   usage: z.string().max(1000).optional(),
+  procedure: z
+    .array(
+      z.object({
+        label: z.string().min(1).max(160),
+        instruction: z.string().min(1).max(2000),
+      }),
+    )
+    .min(1)
+    .max(8)
+    .optional(),
   checks: z.array(z.string().max(1000)).max(8).optional(),
   cells: z.array(z.string().max(2000)).max(6).optional(),
 });
