@@ -60,7 +60,7 @@ export const lifecoreWellnessAsset = assetDocumentSchema.parse({
       defaultOpen: true,
       layout: "narrative",
       summary:
-        "The hypothesis: a benefit can be available to everyone on paper while being practical for only some employees.",
+        "A benefit can be available company-wide while still being inconvenient for colleagues away from the main office.",
       items: [
         {
           title: "The access gap may matter more than the announcement",

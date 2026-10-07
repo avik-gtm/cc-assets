@@ -5,6 +5,6 @@ When evidence is missing, create a useful proposed plan or worksheet, not findin
 Do not fabricate a logo, domain, source URL, verified brand palette, checkedAt date, or purchased gift. Omit logoUrl unless an exact verified logo URL was supplied. Use a neutral editorial palette if no verified branding was supplied.
 Only cite exact URLs supplied in the input. Links without source text are supplied references, not verified evidence. Keep sources empty if none were supplied.
 Keep the four required body sections compact, at most 4 items each. Each table row must have a cells array exactly as long as columns. Use plain text, not Markdown tables inside strings.
-Use preparedBy for the seller, preparedFor for the prospect, and documentLabel for the deliverable type. Do not expose universe, scores, or signal logic in recipient content.
+Use preparedBy for the seller, preparedFor for the prospect, and documentLabel for the deliverable type. Do not expose universe, scores, or internal qualification logic in recipient content. Do use the evidence-backed observations behind signals in Current situation alongside the company context. Unsupported signals remain questions to check, not established facts. Classification metadata stays internal; express uncertainty naturally without inference/unknown badges or analyst-style headings.
 Give each section a short navigationLabel describing its actual content. Use short titles. For a reusable template, use narrative layout and put copyable text in description.
 `;

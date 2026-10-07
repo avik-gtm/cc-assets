@@ -64,7 +64,7 @@ describe("recipient-first support reference", () => {
       generationMode: "agent",
     });
     expect(JSON.stringify(data)).not.toMatch(
-      /PRIVATE_|private-seed|task5Hook|generationMode|warnings/,
+      /PRIVATE_|private-seed|task5Hook|generationMode|warnings|classification/,
     );
     expect(data.gift).toEqual({ status: "omitted" });
   });
@@ -101,7 +101,7 @@ describe("recipient-first support reference", () => {
     );
   });
 
-  it("retains classified evidence and references without a separate sources chapter", () => {
+  it("keeps uncertainty in prose and sources without exposing internal classification labels", () => {
     const asset = toPublicAsset({
       ...linearSupportAsset,
       evidence: [
@@ -116,13 +116,23 @@ describe("recipient-first support reference", () => {
     });
     const html = renderToStaticMarkup(createElement(AssetView, { asset }));
     expect(html).toContain("Background for these recommendations");
-    expect(html).toContain("inference");
+    expect(html).not.toMatch(/evidence-label|>inference<|>unknown<|>fact</);
     expect(html).toContain("A suggestion, not a verified internal role.");
     expect(html).toContain("https://example.com/supplied-reference");
     expect(html).not.toContain("Sources &amp; assumptions");
     const markdown = assetToMarkdown(asset);
-    expect(markdown).toContain("[inference]");
+    expect(markdown).not.toMatch(/Evidence: (fact|inference|unknown)|\[(fact|inference|unknown)\]/);
+    expect(markdown).toContain("A suggestion, not a verified internal role.");
+    expect(JSON.stringify(asset)).not.toContain('"classification"');
+    expect(linearSupportAsset.sections[1].items[0].classification).toBe("inference");
     expect(markdown).toContain("Invitation: Identify SCIM");
+  });
+
+  it("instructs the writer to combine supported signals with company context in natural language", () => {
+    expect(PERSONALIZED_ASSET_SYSTEM_PROMPT).toContain("Combine the relevant supplied Task 2 signals with broader company/product/team context");
+    expect(PERSONALIZED_ASSET_SYSTEM_PROMPT).toContain("A signal is usable as a fact only when its supplied evidence supports it");
+    expect(PERSONALIZED_ASSET_SYSTEM_PROMPT).toContain("Classification values fact/inference/unknown are internal metadata");
+    expect(PERSONALIZED_ASSET_SYSTEM_PROMPT).toContain("Removing labels must never turn an assumption into an asserted fact");
   });
 
   it("exports the actual content, ownership matrix and sources without private fields", () => {

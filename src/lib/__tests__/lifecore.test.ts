@@ -57,6 +57,8 @@ describe("LifeCore prospect-facing example", () => {
     expect(html.indexOf('id="alternatives"')).toBeLessThan(html.indexOf('id="cta-title"'));
     expect(html).not.toMatch(/Linear|SCIM|Triage|SupportLoop|task5Hook|warnings|Sources &amp; assumptions/);
     expect(html).not.toContain(lifecoreWellnessAsset.task5Hook);
+    expect(html).not.toMatch(/evidence-label|>inference<|>unknown<|The hypothesis:/);
+    expect(html).toContain("If the current gym is inconvenient");
   });
 
   it("exports all the useful work but not the separate email", () => {
@@ -66,6 +68,7 @@ describe("LifeCore prospect-facing example", () => {
     expect(text).toContain("- [ ] Confirm participating venues");
     expect(text).toContain("## See how it would work");
     expect(text).not.toContain(lifecoreWellnessAsset.task5Hook);
+    expect(text).not.toMatch(/Evidence: (inference|unknown)|The hypothesis:/);
   });
 
   it("retrieves both references without a generator or storage service", async () => {

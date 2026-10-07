@@ -7,7 +7,20 @@ export type PublicAsset = Omit<
   | "generationMode"
   | "companyLinkedInUrl"
   | "personLinkedInUrl"
->;
+  | "sections"
+  | "evidence"
+> & {
+  sections: (Omit<AssetDocument["sections"][number], "items"> & {
+    items: Omit<AssetDocument["sections"][number]["items"][number], "classification">[];
+  })[];
+  evidence: Omit<AssetDocument["evidence"][number], "classification">[];
+};
+
+function withoutClassification<T extends { classification?: string }>(item: T): Omit<T, "classification"> {
+  const { classification, ...publicItem } = item;
+  void classification;
+  return publicItem;
+}
 
 // Keep operator handoff and research seeds off the page, download, and public JSON.
 // Call this on the server before passing any props into client components.
@@ -27,6 +40,11 @@ export function toPublicAsset(asset: AssetDocument): PublicAsset {
   void personLinkedInUrl;
   return {
     ...publicAsset,
+    sections: asset.sections.map((section) => ({
+      ...section,
+      items: section.items.map(withoutClassification),
+    })),
+    evidence: asset.evidence.map(withoutClassification),
     gift:
       asset.gift.status === "included" && asset.gift.claimUrl
         ? {
@@ -58,7 +76,6 @@ export function assetToMarkdown(asset: PublicAsset): string {
         "",
         item.usage || "",
         item.value || "",
-        item.classification ? `Evidence: ${item.classification}` : "",
         item.description,
       );
       if (item.procedure)
@@ -99,7 +116,7 @@ export function assetToMarkdown(asset: PublicAsset): string {
       "",
       ...asset.evidence.map(
         (item) =>
-          `- [${item.classification}] ${item.label}: ${item.value}. ${item.detail}${item.sourceUrl ? ` Source: ${item.sourceUrl}` : ""}`,
+          `- ${item.label}: ${item.value}. ${item.detail}${item.sourceUrl ? ` Source: ${item.sourceUrl}` : ""}`,
       ),
     );
   if (asset.sources.length)

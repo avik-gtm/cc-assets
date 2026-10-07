@@ -8,6 +8,18 @@ describe("normalizeAssetRequest", () => {
     ).toContain("Acme");
   });
 
+  it("passes signal observations, evidence and private reasoning independently", () => {
+    const result = normalizeAssetRequest({
+      prompt: "Combine relevant signals with company context in Current situation.",
+      signals: "Fictional practice: a second office and remote employees.",
+      verified_evidence: "No public research; these are scenario inputs only.",
+      signal_logic: "Coverage could matter across different employee routines.",
+    });
+    expect(result.signal).toBe("Fictional practice: a second office and remote employees.");
+    expect(result.verifiedEvidence).toBe("No public research; these are scenario inputs only.");
+    expect(result.signalLogic).toBe("Coverage could matter across different employee routines.");
+  });
+
   it("preserves only an explicitly supplied gift offer and actual CTA destination", () => {
     const result = normalizeAssetRequest({
       prompt: "Create a six-part brief from supplied evidence.",

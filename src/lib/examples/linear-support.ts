@@ -71,19 +71,19 @@ export const linearSupportAsset = assetDocumentSchema.parse({
       layout: "narrative",
       defaultOpen: true,
       summary:
-        "A hypothesis to validate—not a diagnosis of Linear's support team.",
+        "When similar symptoms have different causes, a clear first-check sequence can make the next step easier to identify.",
       items: [
         {
           title: "The same symptom can need a different next step",
           classification: "inference",
           description:
-            "If an agent begins with the symptom alone—an invitation missing, a project incomplete, or an issue absent—they may need another exchange to establish the correct configuration and owner. A consistent first-check sequence could reduce that avoidable back-and-forth. Whether this is a meaningful problem at Linear requires ticket evidence, not an assumption from the documentation.",
+            "If an agent begins with the symptom alone—an invitation missing, a project incomplete, or an issue absent—they may need another exchange to establish the correct configuration and owner. A consistent first-check sequence could reduce that back-and-forth where missing context is causing delays.",
         },
         {
-          title: "What would confirm or reject this",
+          title: "Start with a small case review",
           classification: "unknown",
           description:
-            "Review a small, approved sample of these cases. Check whether the provisioning method, access boundary, or active filters were captured before escalation, and whether the next owner asked for missing context. No comparable-company outcome or performance benchmark has been supplied, so none is claimed here.",
+            "Review a small, approved sample of these cases. Check whether the provisioning method, access boundary, or active filters were captured before escalation, and whether the next owner asked for missing context. If your team already captures this consistently, keep that part of your process and focus on the next bottleneck.",
         },
       ],
     },

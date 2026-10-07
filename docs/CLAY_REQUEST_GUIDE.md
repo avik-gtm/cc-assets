@@ -20,6 +20,27 @@ Create the brief in our six-part format. Keep scores and qualification reasoning
 
 For the support example: sales hiring plus support hiring may suggest preparing for growth; it does not prove customer growth, more tickets, or poor support. Include actual opening counts and sources only if you have them. Similar-company results need evidence; otherwise the writer must explain a conditional mechanism without inventing a case study.
 
+## How the signals become prospect-facing content
+
+Pass the actual observations, not only a score. The writer combines relevant evidence-backed signals with company context in **Current situation**. Your private explanation of why those signals matter helps shape **Likely problem**, but is not copied as targeting/scoring commentary.
+
+For example, if supplied evidence establishes sales and support openings, Current situation can say the company is recruiting in both functions. Likely problem can explain that, **if customer onboarding grows**, maintaining consistent support handoffs may become more important. Hiring alone does not establish increased customer or ticket volume.
+
+Keep `fact`, `inference`, and `unknown` as internal classifications. The page, public JSON, and download do not expose those labels. Headings describe the prospect's decision or action; uncertainty stays in ordinary sentences such as “This may…” or “If…”. Fictional examples remain explicitly marked.
+
+You can include everything in `prompt`, or separate observations from reasoning using the existing string fields:
+
+```json
+{
+  "prompt": "[Seller, prospect, buyer, company context and what we can show.]",
+  "signal": "[Actual observation, count and date if known; not just a priority score.]",
+  "verifiedEvidence": "[Supporting source text and exact source URLs, or explicitly identify fictional practice inputs.]",
+  "signalLogic": "[Private explanation of why the observation may matter.]"
+}
+```
+
+These are placeholders to replace, not a ready-to-research company request. The writer does not fetch evidence from URLs automatically. The `signals` alias also accepts a string; use the canonical `signal` field above. Separate fields are optional.
+
 ## Simplest JSON body
 
 ```json

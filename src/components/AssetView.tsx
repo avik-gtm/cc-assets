@@ -62,9 +62,6 @@ function SectionContents({
               {String(index + 1).padStart(2, "0")}
             </span>
             <h3>{item.title}</h3>
-            {item.classification ? (
-              <span className="evidence-label">{item.classification}</span>
-            ) : null}
           </div>
           {item.usage ? <p className="usage-note">{item.usage}</p> : null}
           {item.value ? <p className="item-value">{item.value}</p> : null}
@@ -267,9 +264,6 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
               <div className="evidence-list">
                 {asset.evidence.map((item) => (
                   <article key={item.label}>
-                    <span className="evidence-label">
-                      {item.classification}
-                    </span>
                     <h3>
                       {item.label}: {item.value}
                     </h3>
