@@ -79,7 +79,7 @@ HTTP input is capped at 512 KB with a five-second upload deadline. Model output 
 ## Acceptance checks before live use
 
 1. Send a genuine company prompt through the authenticated website API, with **no `example` field**.
-2. Verify `generationMode: agent`, inspect research counts/warnings, then open the published page and Markdown download.
+2. Verify the three-field response (`success`, `assetUrl`, `executionTimeMs`), then open the published page and Markdown download. Generation/research diagnostics are server-side only.
 3. Check sources, recipient identity, claims, alternatives, CTA, and branding. Private scores, research seeds, classification labels, and Task 5 copy must not appear publicly.
 4. Measure multiple uncached requests from submission to a usable page. Treat 30–60 seconds as a target until the measurements support it; a fast error is not success.
 5. Replace the quick tunnel with an approved stable endpoint before depending on unattended availability.

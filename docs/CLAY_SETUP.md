@@ -44,12 +44,11 @@ For a real run, **omit `example`**. That field selects a fixed authored referenc
 
 After one request, check:
 
-- `success: true`, `generationMode: agent`, and a working `assetUrl`.
-- `generation.researchMode`, `verifiedSourceCount`, and `completedResearchBranches` for actual research coverage. An incomplete branch means research did not supply verified evidence for that assignment within the deadline, not that the prospect lacks the characteristic.
-- `warnings` for limitations and `executionTimeMs` for measured request time. The 30–60-second target is not a guarantee.
+- `success: true` and a working `assetUrl`.
+- `executionTimeMs` for measured request time in milliseconds. The 30–60-second target is not a guarantee.
 - The page and its Markdown download: correct prospect, useful content, supported claims, and no private targeting data.
 
-`task5Hook` is a separate private outbound starting point. It is not part of the public asset. The finished asset has headline → current situation → likely problem → solution → alternatives → CTA.
+The response contains exactly `success`, `assetUrl`, and `executionTimeMs`. Map these to a checkbox, URL, and number column respectively. Failures return `success: false`, `assetUrl: null`, and elapsed time, with an unsuccessful HTTP status. Research diagnostics stay in server logs; no outbound hook or metadata is returned. The finished asset has headline → current situation → likely problem → solution → alternatives → CTA.
 
 The worker launches three parallel research branches and a writer. It may proceed using supplied context when public research is unavailable, and it never treats inaccessible LinkedIn pages or an inferred pain as a verified finding. Supplying good existing evidence makes the result stronger and reduces dependence on fresh research.
 

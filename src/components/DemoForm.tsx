@@ -47,8 +47,7 @@ export function DemoForm() {
       <p className="operator-note">
         The simplest body has only one field: prompt. You do not need to design
         the output JSON or write the six sections yourself. A successful API
-        response includes assetUrl for Task 4 and a separate, private task5Hook
-        for Task 5.
+        response includes only success, assetUrl, and executionTimeMs.
       </p>
     </section>
   );

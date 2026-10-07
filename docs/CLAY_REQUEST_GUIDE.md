@@ -66,13 +66,13 @@ Add **HTTP API** enrichment and use **Configure** (manual). Set:
 | Content type | `application/json` |
 | Authentication | Saved HTTP API header account: `Authorization` = `Bearer [private primary or operator API key]` |
 | Body | `{"prompt":"/Asset context"}` with `/Asset context` inserted using Clay's actual column picker |
-| Output | Retain `success`, `assetUrl`, `task5Hook`, and `error` for inspection |
+| Output | Map `success` to a checkbox, `assetUrl` to a URL, and `executionTimeMs` to a number |
 
 The slash reference above is Clay configuration notation, not a literal value to send outside Clay. Preview the resolved body. String column references need quotes. Keep the key in the saved header account, not a prompt or visible table cell. These settings follow [Clay's HTTP API documentation](https://university.clay.com/docs/http-api-integration-overview). This guide uses manual setup and does not require Sculptor.
 
 The primary `ASSET_API_KEY` is preserved in Vercel but masked; `.env.local` does not contain its usable value. The additional `ASSET_OPERATOR_API_KEY` is stored privately in `.env.operator.local` and is accepted by the same endpoint. Never print or put it in JSON. For a local test that reads the key automatically, run `npm run asset:generate -- examples/requests/linear-live-test.json`, or substitute your own request JSON path.
 
-Test one row first. **Omit `example` for real generation**; an example request returns fixed authored content. Inspect `success`, research coverage, and warnings, then open `assetUrl` before running more. Competition use still requires organizer approval and recreation in the monitored window.
+Test one row first. **Omit `example` for real generation**; an example request returns fixed authored content. Inspect `success` and `executionTimeMs`, then open `assetUrl` and check the content before running more. Competition use still requires organizer approval and recreation in the monitored window.
 
 ## Optional gift offer and CTA destination
 
@@ -94,16 +94,13 @@ Optionally supply `ctaUrl` with your actual HTTPS booking/demo URL. Without one,
 
 ## What comes back
 
-The API's successful response includes:
+The API response contains exactly three fields:
 
 - `success: true`
 - `assetUrl`: the prospect-facing page with headline → current situation → likely problem → solution → alternatives → CTA.
-- `task5Hook`: a separate private starting point for your outbound email.
-- `generationMode`: `agent` for genuinely generated content, `reference` for the bundled example.
-- `executionTimeMs`: the measured request duration.
-- `generation.researchMode`: `parallel_public_research` for the Codex worker.
-- `generation.verifiedSourceCount` and `generation.completedResearchBranches`: admitted sources and completed assignments, not a guarantee that every desired fact was found.
-- `warnings`: private research limitations. An incomplete branch does not mean the prospect lacks that characteristic.
+- `executionTimeMs`: the measured request duration in milliseconds.
+
+Failures have the same three keys: `success: false`, `assetUrl: null`, and elapsed time, with a non-success HTTP status. Diagnostic details are retained in server logs, not returned to Clay. No title, slug, outbound hook, research metadata, storage metadata, or warnings are returned. Older verification reports in this repository record historical responses, not the current contract.
 
 **Current setup:** Vercel is connected to the separate signed-in Codex worker through a temporary Cloudflare quick tunnel. The Mac must stay awake/online and the tunnel running. A Dot is not configured and does not sit in the timed path. The research budget is 20 seconds shared across three parallel branches, followed by a 30-second writing deadline; these are limits, not proof of a successful 30–60-second run. Measure real requests and inspect their content. Do not count a fast error or authored reference as success.
 

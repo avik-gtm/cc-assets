@@ -393,6 +393,7 @@ describe("API boundaries", () => {
       method: "POST", headers: { Authorization: "Bearer wrong" }, body: "test",
     }));
     expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ success: false, assetUrl: null, executionTimeMs: expect.any(Number) });
   });
   it("downloads an editable recipient-only document with an attachment header", async () => {
     const response = await download(new Request("http://localhost/test"), {
@@ -419,10 +420,10 @@ describe("API boundaries", () => {
     );
     const result = await response.json();
     expect(response.status).toBe(200);
-    expect(result.generationMode).toBe("reference");
-    expect(result.storage).toBe("bundled");
+    expect(result).toEqual({ success: true, assetUrl: expect.any(String), executionTimeMs: expect.any(Number) });
+    expect(result.executionTimeMs).toBeGreaterThanOrEqual(0);
     const publicResponse = await GET(new NextRequest(result.assetUrl), {
-      params: Promise.resolve({ slug: result.slug }),
+      params: Promise.resolve({ slug: new URL(result.assetUrl).pathname.split("/").pop()! }),
     });
     expect(JSON.stringify(await publicResponse.json())).not.toContain(
       "task5Hook",
@@ -441,7 +442,7 @@ describe("API boundaries", () => {
       }),
     );
     expect(response.status).toBe(503);
-    expect((await response.json()).success).toBe(false);
+    expect(await response.json()).toEqual({ success: false, assetUrl: null, executionTimeMs: expect.any(Number) });
   });
 
   it("fails closed on an unconfigured hosted API", async () => {
@@ -454,5 +455,16 @@ describe("API boundaries", () => {
       }),
     );
     expect(response.status).toBe(401);
+  });
+
+  it.each(["{invalid", "{}"])("keeps malformed/invalid input responses to three fields: %s", async body => {
+    vi.stubEnv("VERCEL", "");
+    vi.stubEnv("ASSET_API_KEY", "");
+    vi.stubEnv("ASSET_OPERATOR_API_KEY", "");
+    const response = await POST(new NextRequest("http://localhost/api/assets", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body,
+    }));
+    expect(response.status).toBe(body === "{}" ? 422 : 400);
+    expect(await response.json()).toEqual({ success: false, assetUrl: null, executionTimeMs: expect.any(Number) });
   });
 });

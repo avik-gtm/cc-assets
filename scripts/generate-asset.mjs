@@ -15,7 +15,6 @@ if (input.example) throw new Error("Remove example for real generation; authored
 const endpoint = process.env.ASSET_PUBLIC_API_URL || "https://cc.getattn.io/api/assets";
 const url = new URL(endpoint);
 if (url.protocol !== "https:" || url.username || url.password) throw new Error("API URL must use HTTPS.");
-const started = performance.now();
 const response = await fetch(endpoint, {
   method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
   body: JSON.stringify(input), signal: AbortSignal.timeout(110_000), redirect: "error",
@@ -23,5 +22,5 @@ const response = await fetch(endpoint, {
 const result = await response.json();
 await mkdir(join(root, ".runtime"), { recursive: true, mode: 0o700 });
 await writeFile(join(root, ".runtime/last-result.json"), JSON.stringify(result, null, 2), { mode: 0o600 });
-console.log(JSON.stringify({ status: response.status, elapsedSeconds: Math.round((performance.now() - started) / 100) / 10, ...result }, null, 2));
+console.log(JSON.stringify(result, null, 2));
 if (!response.ok || !result.success) process.exitCode = 1;

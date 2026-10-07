@@ -83,7 +83,7 @@ describe("LifeCore prospect-facing example", () => {
     expect(fetcher).not.toHaveBeenCalled();
   });
 
-  it("returns the LifeCore URL through POST with honest reference mode and working read/download endpoints", async () => {
+  it("returns only three response fields with working LifeCore read/download endpoints", async () => {
     vi.stubEnv("VERCEL", "");
     vi.stubEnv("ASSET_API_KEY", "");
     vi.stubEnv("ASSET_GENERATOR_URL", "");
@@ -92,13 +92,12 @@ describe("LifeCore prospect-facing example", () => {
     }));
     const result = await response.json();
     expect(response.status).toBe(200);
-    expect(result.slug).toBe("lifecore-northstar-wellness");
-    expect(result.generationMode).toBe("reference");
-    expect(result.storage).toBe("bundled");
-    const publicResponse = await GET(new NextRequest(result.assetUrl), { params: Promise.resolve({ slug: result.slug }) });
+    expect(result).toEqual({ success: true, assetUrl: expect.stringContaining("/a/lifecore-northstar-wellness"), executionTimeMs: expect.any(Number) });
+    const slug = new URL(result.assetUrl).pathname.split("/").pop()!;
+    const publicResponse = await GET(new NextRequest(result.assetUrl), { params: Promise.resolve({ slug }) });
     expect(publicResponse.status).toBe(200);
     expect(JSON.stringify(await publicResponse.json())).not.toMatch(/task5Hook|warnings|generationMode/);
-    const exported = await download(new Request("http://localhost/test"), { params: Promise.resolve({ slug: result.slug }) });
+    const exported = await download(new Request("http://localhost/test"), { params: Promise.resolve({ slug }) });
     expect(exported.status).toBe(200);
     expect(await exported.text()).toContain("Make your wellness benefit work beyond the head office.");
   });
