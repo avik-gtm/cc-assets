@@ -2,7 +2,7 @@ import { describe, expect, it, vi, afterEach } from "vitest";
 import { readFile } from "node:fs/promises";
 import { assetRequestSchema } from "../src/lib/schemas";
 import { linearSupportAsset } from "../src/lib/examples/linear-support";
-import { codexArguments, codexEnvironment, parseCodexResult, strictOutputSchema, withoutNulls, writeWithCodex } from "./codex";
+import { codexArguments, codexEnvironment, finalizeCodexAsset, parseCodexResult, strictOutputSchema, withoutNulls, writeWithCodex } from "./codex";
 import { isPublicAddress, pageDescription, publicSourceUrl, readableText, verifyResearchSource } from "./research";
 import { runCommand } from "./claude";
 
@@ -115,5 +115,60 @@ describe("parallel bounded research + single writing call", () => {
     await expect(writeWithCodex(assetRequestSchema.parse({ prompt: "A prospect brief" }), {
       executable: "codex", cwd: "/tmp", env: { NODE_ENV: "test" }, signal: AbortSignal.abort(),
     })).rejects.toMatchObject({ code: "request_cancelled" });
+  });
+});
+
+describe("deterministic safe writer finalization", () => {
+  const input = assetRequestSchema.parse({ prompt: JSON.stringify(linearSupportAsset), sourceUrls: ["https://linear.app"], ctaUrl: "https://example.com/book" });
+  it("orders four unique section IDs without modifying their content", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.sections.reverse();
+    const result = finalizeCodexAsset(output, input);
+    expect(result.sections.map((section) => section.id)).toEqual(["current-situation", "likely-problem", "solution", "alternatives"]);
+    expect(result.sections[0].items[0].description).toBe(linearSupportAsset.sections[0].items[0].description);
+  });
+  it("rejects duplicated or missing required sections", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.sections[3] = structuredClone(output.sections[0]);
+    expect(() => finalizeCodexAsset(output, input)).toThrow("codex_invalid_sections");
+  });
+  it("omits unsupported optional cosmetic and action links without inventing replacements", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.logoUrl = "http://invented.invalid/logo.svg";
+    output.callToAction = { message: "Happy to show you a sample workflow.", url: "https://invented.invalid/book" };
+    const result = finalizeCodexAsset(output, input);
+    expect(result.logoUrl).toBeUndefined();
+    expect(result.callToAction?.url).toBeUndefined();
+    expect(result.callToAction?.message).toBe(output.callToAction.message);
+    expect(result.warnings).toContain("Unsupported optional logo was omitted.");
+  });
+  it("keeps a caller-approved CTA destination", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.callToAction = { message: "Happy to show you a sample workflow.", url: "https://example.com/book" };
+    expect(finalizeCodexAsset(output, input).callToAction?.url).toBe(input.ctaUrl);
+  });
+  it("rejects an invented source rather than silently stripping its citation", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.sources.push({ label: "Invented research", url: "https://invented.invalid/research" });
+    expect(() => finalizeCodexAsset(output, input)).toThrow("codex_unverified_reference");
+    output.sources.pop();
+    output.sections[0].items[0].sourceUrl = "https://invented.invalid/research";
+    expect(() => finalizeCodexAsset(output, input)).toThrow("codex_unverified_reference");
+  });
+  it("normalizes only equivalent URL spelling, not a different path", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.sources.push({ label: "Linear", url: "https://linear.app/" });
+    expect(finalizeCodexAsset(output, input).sources.at(-1)?.url).toBe("https://linear.app");
+    output.sources[output.sources.length - 1].url = "https://linear.app/invented-path";
+    expect(() => finalizeCodexAsset(output, input)).toThrow("codex_unverified_reference");
+  });
+  it("renders inconsistent tables as cards using existing descriptions", () => {
+    const output = structuredClone(linearSupportAsset);
+    output.sections[3].columns = ["Option", "Fit"];
+    output.sections[3].items[0].cells = ["Unmatched"];
+    const result = finalizeCodexAsset(output, input);
+    expect(result.sections[3].layout).toBe("cards");
+    expect(result.sections[3].columns).toBeUndefined();
+    expect(result.sections[3].items[0].description).toBe(output.sections[3].items[0].description);
   });
 });

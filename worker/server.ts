@@ -99,7 +99,9 @@ export function createWriterServer(options: {
       send(response, 200, result);
     } catch (error) {
       const failure = error instanceof WriterError ? error : new WriterError("generation_failed");
-      console.warn(JSON.stringify({ event: "asset_worker_failed", code: failure.code, status: failure.status }));
+      const knownContractReasons = ["Generator returned an unsupplied reference URL.", "Generator did not return the requested six-part structure."];
+      const reason = error instanceof z.ZodError ? error.issues.map(issue => ({ field: issue.path.join("."), rule: issue.code })) : error instanceof Error && knownContractReasons.includes(error.message) ? error.message : undefined;
+      console.warn(JSON.stringify({ event: "asset_worker_failed", code: failure.code, status: failure.status, reason }));
       send(response, failure.status, { error: failure.code });
     } finally {
       controllers.delete(controller);
