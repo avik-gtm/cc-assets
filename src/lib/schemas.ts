@@ -45,6 +45,13 @@ export const assetRequestSchema = z
     giftPreference: z.string().trim().max(1_000).optional(),
     giftSourceUrl: optionalUrl,
     giftClaimUrl: optionalUrl,
+    approvedGiftOffer: z
+      .object({
+        label: z.string().trim().min(1).max(300),
+        policyNote: z.string().trim().max(500).optional(),
+      })
+      .optional(),
+    ctaUrl: optionalUrl,
   })
   .superRefine((value, context) => {
     const hasPrompt = Boolean(value.prompt?.trim());
@@ -148,6 +155,7 @@ export const giftSchema = z.object({
 });
 
 export const generatedAssetSchema = z.object({
+  documentFormat: z.literal("six_part_brief").optional(),
   assetType: assetTypeSchema,
   title: z.string().min(1).max(300),
   subtitle: z.string().min(1).max(1_000),
@@ -181,6 +189,19 @@ export const generatedAssetSchema = z.object({
   sources: z.array(sourceSchema).max(30),
   gift: giftSchema,
   task5Hook: z.string().min(1).max(2_000),
+  callToAction: z
+    .object({
+      message: z.string().min(1).max(1500),
+      buttonLabel: z.string().max(100).optional(),
+      url: optionalUrl,
+    })
+    .optional(),
+  approvedGiftOffer: z
+    .object({
+      label: z.string().min(1).max(300),
+      policyNote: z.string().max(500).optional(),
+    })
+    .optional(),
   warnings: z.array(z.string().max(1_000)).max(20).default([]),
 });
 

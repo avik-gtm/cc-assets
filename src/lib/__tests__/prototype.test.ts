@@ -24,15 +24,14 @@ afterEach(() => {
 });
 
 describe("recipient-first support reference", () => {
-  it("validates three sourced diagnostic playcards and five practice days without email copy", () => {
+  it("validates the six-part brief with sourced facts, hypotheses, solution, alternatives and CTA", () => {
     expect(generatedAssetSchema.safeParse(linearSupportAsset).success).toBe(
       true,
     );
-    const playcards = linearSupportAsset.sections[0].items;
-    expect(playcards).toHaveLength(3);
-    for (const card of playcards) {
-      expect(card.description).toContain("First check:");
-      expect(card.procedure).toHaveLength(3);
+    const facts = linearSupportAsset.sections[0].items;
+    expect(facts).toHaveLength(3);
+    for (const card of facts) {
+      expect(card.classification).toBe("fact");
       expect(card.description).not.toMatch(/Hi \[first name\]|Subject:/);
       expect(
         linearSupportAsset.sources.some(
@@ -40,7 +39,20 @@ describe("recipient-first support reference", () => {
         ),
       ).toBe(true);
     }
-    expect(linearSupportAsset.sections[2].items).toHaveLength(5);
+    expect(linearSupportAsset.sections.map((section) => section.id)).toEqual([
+      "current-situation",
+      "likely-problem",
+      "solution",
+      "alternatives",
+    ]);
+    expect(linearSupportAsset.sections[1].items[0].classification).toBe(
+      "inference",
+    );
+    expect(linearSupportAsset.sections[2].items[0].procedure).toHaveLength(3);
+    expect(linearSupportAsset.sections[3].items).toHaveLength(3);
+    expect(linearSupportAsset.callToAction?.message).toContain(
+      "Happy to walk you through",
+    );
   });
 
   it("removes operator handoff, warnings and research seeds from public data", () => {
@@ -57,12 +69,12 @@ describe("recipient-first support reference", () => {
     expect(data.gift).toEqual({ status: "omitted" });
   });
 
-  it("renders work before sources without qualification language or sender pitch", () => {
+  it("renders the requested order and public CTA without private qualification context", () => {
     const html = renderToStaticMarkup(
       createElement(AssetView, { asset: toPublicAsset(linearSupportAsset) }),
     );
     expect(html).toContain("linear-wordmark-dark.svg");
-    expect(html.indexOf("The invitation that never arrived")).toBeLessThan(
+    expect(html.indexOf("Invitations depend on provisioning")).toBeLessThan(
       html.indexOf('aria-label="Reference links"'),
     );
     expect(html).not.toMatch(
@@ -70,9 +82,17 @@ describe("recipient-first support reference", () => {
     );
     expect(html).toContain("Not an official");
     expect(html).toContain("Document contents");
-    expect(html).toContain("Implementation notes");
+    expect(html).toContain("document-cover");
+    expect(html).toContain("Expand all");
+    expect(html).toContain("Collapse all");
+    expect(html).toMatch(/<details[^>]+id="current-situation"[^>]+open=""/);
+    expect(html).toMatch(/<details[^>]+id="alternatives"[^>]+open=""/);
+    expect(html).not.toContain("document-sidebar");
+    expect(html).not.toContain("Implementation notes");
+    expect(html).toContain("See how it would work");
+    expect(html).not.toContain("Copy template");
     expect(html).toContain("decision-path");
-    expect(html).toContain("Non-SCIM workspace");
+    expect(html).toContain("SCIM versus workspace-managed");
     expect(html).not.toMatch(
       /Sources &amp; assumptions|source-chapter|href="#sources"/,
     );
@@ -102,16 +122,14 @@ describe("recipient-first support reference", () => {
     expect(html).not.toContain("Sources &amp; assumptions");
     const markdown = assetToMarkdown(asset);
     expect(markdown).toContain("[inference]");
-    expect(markdown).toContain("SCIM workspace:");
+    expect(markdown).toContain("Invitation: Identify SCIM");
   });
 
   it("exports the actual content, ownership matrix and sources without private fields", () => {
     const markdown = assetToMarkdown(toPublicAsset(linearSupportAsset));
-    expect(markdown).toContain("notifications@linear.app");
-    expect(markdown).toContain("Proposed next owner:");
-    expect(markdown).toContain(
-      "- [ ] Read the three linked documentation pages.",
-    );
+    expect(markdown).toContain("## Your best options");
+    expect(markdown).toContain("Best fit:");
+    expect(markdown).toContain("- [ ] Confirm the requester is authorized.");
     expect(markdown).toContain("https://linear.app/docs/triage");
     expect(markdown).not.toContain(linearSupportAsset.task5Hook);
     expect(markdown).not.toMatch(/Subject:|Hi \[first name\]/);
@@ -129,6 +147,8 @@ describe("recipient-first support reference", () => {
     (assetType) => {
       const asset = toPublicAsset({
         ...linearSupportAsset,
+        documentFormat: undefined,
+        callToAction: undefined,
         assetType,
         preparedFor: "Northstar Commerce",
         logoUrl: undefined,
@@ -183,8 +203,9 @@ describe("recipient-first support reference", () => {
   it("keeps legacy layouts readable without turning values into email subjects", () => {
     const asset = toPublicAsset({
       ...linearSupportAsset,
+      documentFormat: undefined,
       sections: linearSupportAsset.sections.map((section) =>
-        section.id === "handoff"
+        section.id === "solution"
           ? {
               ...section,
               layout: "replies",
@@ -222,6 +243,15 @@ describe("recipient-first support reference", () => {
     expect(asset.gift).toEqual({ status: "omitted" });
   });
 
+  it("shows an approved offer in the CTA without pretending a voucher exists", () => {
+    const asset = toPublicAsset({ ...linearSupportAsset, approvedGiftOffer: { label: "a coffee gift card" } });
+    const html = renderToStaticMarkup(createElement(AssetView, { asset }));
+    expect(html).toContain("happy to send over");
+    expect(html).toContain("a coffee gift card");
+    expect(html).not.toContain("View gift");
+    expect(assetToMarkdown(asset)).toContain("a coffee gift card");
+  });
+
   it("rejects script URLs and malformed table rows", () => {
     expect(
       generatedAssetSchema.safeParse({
@@ -239,7 +269,7 @@ describe("recipient-first support reference", () => {
       generatedAssetSchema.safeParse({
         ...linearSupportAsset,
         sections: [
-          { ...linearSupportAsset.sections[1], columns: ["Only one"] },
+          { ...linearSupportAsset.sections[3], columns: ["Only one"] },
           linearSupportAsset.sections[0],
         ],
       }).success,
@@ -279,7 +309,7 @@ describe("honest generation modes", () => {
       .mockResolvedValue(new Response(JSON.stringify(linearSupportAsset)));
     vi.stubGlobal("fetch", fetcher);
     const result = await generateAsset(
-      assetRequestSchema.parse({ prompt: "Build the support kit" }),
+      assetRequestSchema.parse({ prompt: JSON.stringify(linearSupportAsset) }),
     );
     expect(result.mode).toBe("agent");
     expect(
@@ -343,7 +373,8 @@ describe("API boundaries", () => {
       "attachment;",
     );
     const text = await response.text();
-    expect(text).toContain("## Diagnostic playcards");
+    expect(text).toContain("## Current situation");
+    expect(text).toContain("## See how it would work");
     expect(text).not.toContain(linearSupportAsset.task5Hook);
   });
   it("returns a reference URL and public JSON without the private hook", async () => {

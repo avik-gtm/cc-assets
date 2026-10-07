@@ -2,6 +2,8 @@
 
 ## Complete: one recipient-first support prototype
 
+Latest user direction: the current Linear reference and generator contract now use headline → current situation → likely problem → solution → alternative options → CTA. This replaces the earlier training-kit-only presentation; the CTA is public, while the separate outbound email stays private.
+
 1. Confirm the newer `enrichflow-gtm-audit` reference.
 2. Author a useful support onboarding kit using public Linear documentation.
 3. Match the editorial shell: recipient logo/colors, specific cover, work first, supporting research underneath.
@@ -11,11 +13,11 @@
 
 ## In progress: live generation
 
-Direct AI Gateway writing, authentication, and Blob storage have been added. Tests and build pass. The first hosted AccessProof request is blocked by Gateway billing verification (HTTP 403 at Gateway; 503 at the asset API). No generated AccessProof artifact exists yet. Resume after the user enables Gateway access or selects another provider; do not change billing automatically.
+Vercel hosts the pages, forwarding API, and Blob documents only. AI Gateway code, dependency, setup warnings, and active setup instructions have been removed. The external generator adapter is implemented, but its live endpoint is not connected. No generated AccessProof artifact exists yet. Do not add model billing back to Vercel.
 
 The next milestone is not more templates. It is to reproduce this quality for a previously unseen company from one short prompt.
 
-- Complete a live request with the configured direct writer, then connect bounded research separately. The external-service adapter still accepts `systemPrompt`, `input`, and `outputSchema`.
+- Verify the separate Claude runtime and connect a restricted writer, then complete a real request. The external-service adapter accepts `systemPrompt`, `input`, and `outputSchema`. The original worker is configured for the OpenClaw Mac; a reachability check timed out. Preserve the original pipeline and queue.
 - Extract seller, recipient, buyer, and source material without confusing their roles.
 - Choose one useful deliverable based on the problem and evidence, not keyword substitution.
 - Fetch a bounded set of public sources and verified brand assets. No private LinkedIn scraping or claimed research when pages are inaccessible.

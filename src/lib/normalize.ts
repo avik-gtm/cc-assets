@@ -168,6 +168,8 @@ export function normalizeAssetRequest(body: unknown): AssetRequest {
     giftClaimUrl: normalizeUrl(
       firstString(record, ["giftClaimUrl", "gift_claim_url", "gift_url"]),
     ),
+    approvedGiftOffer: record.approvedGiftOffer,
+    ctaUrl: normalizeUrl(firstString(record, ["ctaUrl", "cta_url"])),
   };
 
   return assetRequestSchema.parse(normalized);

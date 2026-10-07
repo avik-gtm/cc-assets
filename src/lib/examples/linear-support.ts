@@ -4,16 +4,17 @@ const invite = "https://linear.app/docs/invite-members";
 const roles = "https://linear.app/docs/members-roles";
 const triage = "https://linear.app/docs/triage";
 
-// Authored reference, not an on-demand AI result. No hiring, backlog, or team-size
-// claim is made about Linear. SupportLoop is the fictional seller in the exercise.
+// Authored practice reference. SupportLoop is a fictional seller, not a
+// verified deployed product. No hiring, backlog, or internal performance claims.
 export const linearSupportAsset = assetDocumentSchema.parse({
   slug: "linear-support-onboarding",
   generatedAt: "2026-10-07T16:00:00.000Z",
   generationMode: "reference",
-  assetType: "toolkit",
-  title: "Support operations field guide",
+  documentFormat: "six_part_brief",
+  assetType: "action_plan",
+  title: "A clearer path from support question to resolution.",
   subtitle:
-    "Linear · diagnostic playcards, escalation ownership, and a five-day onboarding plan.",
+    "A practical support workflow proposal for Linear: diagnose the situation, identify the next owner, and hand over a complete case.",
   preparedFor: "Linear",
   recipientTitle: "Support leadership",
   companyDomain: "linear.app",
@@ -21,288 +22,199 @@ export const linearSupportAsset = assetDocumentSchema.parse({
   brandColor: "#5E6AD2",
   brandBackground: "#222326",
   brandSurface: "#F4F5F8",
-  preparedBy: "SupportLoop · independent concept",
-  documentLabel: "Operations / Onboarding",
+  preparedBy: "SupportLoop · practice concept",
+  documentLabel: "Personalized support brief",
   useNote:
-    "Based on public product documentation, not internal ticket data. Routing and training are proposed practices for your team to approve.",
+    "Based on public product documentation, not internal support data. SupportLoop and its proposed workflow are a practice concept, not a verified product implementation.",
   executiveSummary:
-    "Use the playcards to distinguish configuration questions from exceptions, the matrix to assign the next owner, and the handoff template to record a reproducible case. The practice plan ties each workflow to a reviewable output.",
+    "Start with three documented workflows and one consistent handoff. Validate whether this solves a real support problem before changing your process.",
   nonObviousInsight:
-    "A missing invitation, limited project visibility, and an issue missing from a view can look like bugs. The first useful question is often about access or configuration, not engineering capacity.",
+    "A question that looks like a defect may be explained by provisioning, permissions, or filters. The proposed workflow makes that distinction explicit before escalation.",
   evidence: [],
   sections: [
     {
-      id: "playcards",
-      navigationLabel: "Diagnostic playcards",
-      title: "Diagnostic playcards",
-      summary:
-        "A first check, an action path, and a boundary for each workflow. These are practice scenarios, not claims about ticket frequency or current performance.",
+      id: "current-situation",
+      title: "Current situation",
+      navigationLabel: "Current situation",
       layout: "cards",
       defaultOpen: true,
+      summary:
+        "Your public documentation describes several distinct paths a support investigation may need to follow. It does not tell us how often your team receives these questions.",
       items: [
         {
-          title: "The invitation that never arrived",
-          usage:
-            "Use when a customer says a teammate has not received an invitation.",
+          title: "Invitations depend on provisioning",
           description:
-            "First check: identify the provisioning method, then follow the matching path.",
-          procedure: [
-            {
-              label: "SCIM workspace",
-              instruction:
-                "Ask the identity-provider administrator to check member/admin provisioning. Guest invitations follow a separate path.",
-            },
-            {
-              label: "Non-SCIM workspace",
-              instruction:
-                "An authorized admin checks the address and pending invitation in Settings → Administration → Members. If email is filtered, the email administrator can allow notifications@linear.app and pm_bounces@pm-bounces.linear.app.",
-            },
-            {
-              label: "Still blocked",
-              instruction:
-                "Record the affected identity, approximate invite time, provisioning method, and redacted error in an approved support channel. Never collect passwords or sign-in links.",
-            },
-          ],
-          checks: [
-            "Confirm the requester is authorized before discussing workspace membership.",
-            "Check the workspace's provisioning path before recommending another invitation.",
-          ],
+            "Invitation troubleshooting differs between identity-provider provisioning and invitations managed inside a workspace.",
+          classification: "fact",
           sourceUrl: invite,
         },
         {
-          title: "The guest who cannot see the whole project",
-          usage:
-            "Use when a guest reports missing issues in a project spanning multiple teams.",
+          title: "Visibility depends on access boundaries",
           description:
-            "First check: identify the team that owns the missing issue and the guest's team membership.",
-          procedure: [
-            {
-              label: "Outside the issue's team",
-              instruction:
-                "Limited visibility may be expected: seeing a cross-team project does not grant access to every team's issues. Ask the appropriate owner to confirm intended access.",
-            },
-            {
-              label: "Access already granted",
-              instruction:
-                "Capture the issue reference, expected access, and a redacted screenshot for product support.",
-            },
-            {
-              label: "Access boundary",
-              instruction:
-                "Do not broaden a workspace role just to troubleshoot, or disclose private issue content to an unauthorized guest.",
-            },
-          ],
-          checks: [
-            "Confirm which team owns the missing issue and whether the requester may access it.",
-            "Do not reproduce private issue content in a reply to an unauthorized guest.",
-          ],
+            "Guest access and team membership affect what someone can see in a cross-team project.",
+          classification: "fact",
           sourceUrl: roles,
         },
         {
-          title: "The issue that disappeared from a view",
-          usage:
-            "Use when a customer can find an issue in Triage but not in a normal view.",
+          title: "An issue's status changes where it appears",
           description:
-            "First check: compare the issue's current status with the view's active filters.",
-          procedure: [
-            {
-              label: "Still in Triage",
-              instruction:
-                "Triage issues are excluded from views by default. Include Triage in a custom view's status filter if that view should display them.",
-            },
-            {
-              label: "Ready for the workflow",
-              instruction:
-                "The triage owner reviews and accepts the issue. Do not change status solely to make a screenshot match.",
-            },
-            {
-              label: "Still unexplained",
-              instruction:
-                "Record the issue and view references, filters, and reproduction steps before treating it as a suspected defect.",
-            },
-          ],
-          checks: [
-            "Confirm the issue's current status and the view filters.",
-            "Do not change issue status simply to make a screenshot match.",
-          ],
+            "Triage issues are excluded from views by default; status and filter settings matter when investigating a missing issue.",
+          classification: "fact",
           sourceUrl: triage,
         },
       ],
     },
     {
-      id: "routing",
-      navigationLabel: "Routing matrix",
-      eyebrow: "A proposed operating rule",
-      title: "Escalation routing matrix",
-      summary:
-        "Suggested ownership for these scenarios, not a description of Linear's internal organization. Substitute your actual queues and response commitments.",
-      layout: "table",
-      columns: [
-        "Scenario",
-        "First check",
-        "Proposed next owner",
-        "Include in the handoff",
-      ],
-      items: [
-        {
-          title: "Access or invitation",
-          description: "Keep account changes with an authorized administrator.",
-          cells: [
-            "Invitation or provisioning",
-            "Identity, workspace, provisioning method",
-            "Workspace / IdP administrator; support if still blocked",
-            "Invite time, affected identity, method, redacted error. No credentials.",
-          ],
-        },
-        {
-          title: "Permissions or visibility",
-          description:
-            "Investigate the access boundary before escalating as a defect.",
-          cells: [
-            "Guest cannot see an issue",
-            "Guest role, issue team, intended access",
-            "Team owner; product support for a reproducible mismatch",
-            "Issue reference, expected access, actual result, checks already completed.",
-          ],
-        },
-        {
-          title: "Triage or view configuration",
-          description:
-            "Rule out status and filter behavior before engineering investigation.",
-          cells: [
-            "Issue absent from a view",
-            "Issue status and active filters",
-            "Triage owner; product support if configuration cannot explain it",
-            "Issue and view references, filter settings, reproducible steps.",
-          ],
-        },
-        {
-          title: "Suspected privacy or security issue",
-          description:
-            "This is a proposed precaution, not a published Linear incident process.",
-          cells: [
-            "Unexpected access or sensitive-data exposure",
-            "Limit collection and sharing of sensitive material",
-            "Your designated security / incident channel",
-            "Minimal redacted evidence and timing. Do not promise a resolution deadline.",
-          ],
-        },
-      ],
-    },
-    {
-      id: "first-week",
-      navigationLabel: "Five-day practice plan",
-      eyebrow: "Practice, then calibrate",
-      title: "Five-day onboarding plan",
-      summary:
-        "A proposed training sequence. Run exercises in a safe test workspace or with fabricated tickets; validate each procedure with the support lead before operational use.",
-      layout: "checklist",
-      items: [
-        {
-          title: "Day 1 · Know the boundaries",
-          description: "Deliverable: an annotated access map.",
-          checks: [
-            "Read the three linked documentation pages.",
-            "Record who can approve access changes in your own process.",
-            "Identify where to send a security-sensitive report.",
-          ],
-        },
-        {
-          title: "Day 2 · Diagnose the scenario",
-          description: "Deliverable: three reviewed diagnostic records.",
-          checks: [
-            "For each playcard, record the first check, observed result, and next action.",
-            "Have a reviewer check the steps against the linked source.",
-            "Separate expected product behavior from an unexplained exception.",
-          ],
-        },
-        {
-          title: "Day 3 · Practice the handoff",
-          description: "Deliverable: one complete escalation packet.",
-          checks: [
-            "Reproduce one permission or view-configuration scenario safely.",
-            "Capture expected versus actual behavior and checks already completed.",
-            "Have the receiving teammate confirm they can act without asking for missing context.",
-          ],
-        },
-        {
-          title: "Day 4 · Calibrate judgment",
-          description:
-            "Deliverable: a short list of disagreements and resolutions.",
-          checks: [
-            "Have two reviewers independently route the same fabricated tickets.",
-            "Discuss differences in identity checks, ownership, and engineering escalation.",
-            "Update the proposed matrix with your team's decisions.",
-          ],
-        },
-        {
-          title: "Day 5 · Publish the approved version",
-          description: "Deliverable: a small, owned operating guide.",
-          checks: [
-            "Assign an owner to each playcard and routing rule.",
-            "Record the review date and the documentation source.",
-            "Agree when product or policy changes should trigger another review.",
-          ],
-        },
-      ],
-    },
-    {
-      id: "handoff",
-      navigationLabel: "Handoff template",
-      eyebrow: "One reusable template",
-      title: "Escalation handoff template",
-      summary:
-        "Copy this into your internal escalation tool. Replace the placeholders and omit information the receiving team does not need.",
+      id: "likely-problem",
+      title: "Likely problem",
+      navigationLabel: "Likely problem",
       layout: "narrative",
+      defaultOpen: true,
+      summary:
+        "A hypothesis to validate—not a diagnosis of Linear's support team.",
       items: [
         {
-          title: "Internal escalation packet",
+          title: "The same symptom can need a different next step",
+          classification: "inference",
           description:
-            "Customer impact: [What is blocked, stated by the customer]\nAuthorized requester confirmed: [How your policy was followed]\nWorkspace / issue reference: [Approved internal reference]\nExpected behavior: [Include source or approved policy]\nObserved behavior: [What happened, without interpretation]\nSteps to reproduce: [Smallest safe sequence]\nChecks completed: [Identity, access, status, filters as relevant]\nEvidence: [Redacted screenshot / error and time]\nRequested decision: [What you need the next owner to determine]\nNext customer update: [Only a commitment your team has approved]",
+            "If an agent begins with the symptom alone—an invitation missing, a project incomplete, or an issue absent—they may need another exchange to establish the correct configuration and owner. A consistent first-check sequence could reduce that avoidable back-and-forth. Whether this is a meaningful problem at Linear requires ticket evidence, not an assumption from the documentation.",
+        },
+        {
+          title: "What would confirm or reject this",
+          classification: "unknown",
+          description:
+            "Review a small, approved sample of these cases. Check whether the provisioning method, access boundary, or active filters were captured before escalation, and whether the next owner asked for missing context. No comparable-company outcome or performance benchmark has been supplied, so none is claimed here.",
+        },
+      ],
+    },
+    {
+      id: "solution",
+      title: "A practical solution",
+      navigationLabel: "Solution",
+      layout: "steps",
+      defaultOpen: true,
+      summary:
+        "A proposed SupportLoop workflow: establish the branch, name the owner, and hand over the evidence. These steps can also be tested manually before deciding on a platform.",
+      items: [
+        {
+          title: "Start with the right diagnostic branch",
+          description:
+            "Give the agent a short first-check path rather than a generic escalation instruction.",
+          procedure: [
+            {
+              label: "Invitation",
+              instruction:
+                "Identify SCIM versus workspace-managed provisioning before recommending another invitation. Keep identity and access changes with an authorized administrator.",
+            },
+            {
+              label: "Guest visibility",
+              instruction:
+                "Check the issue's owning team and intended guest access before treating limited visibility as a defect.",
+            },
+            {
+              label: "Missing issue",
+              instruction:
+                "Compare the issue's status with the view's filters. If it is in Triage, first check whether that status is included in the view.",
+            },
+          ],
+        },
+        {
+          title: "Make the handoff usable immediately",
+          description:
+            "Record the observed symptom, expected behavior, checks already completed, minimal redacted evidence, proposed next owner, and the decision needed. Keep the diagnosis separate from what was observed. Never collect passwords or sign-in links.",
           checks: [
-            "Never include passwords, tokens, sign-in links, or unnecessary personal data.",
-            "Keep the proposed diagnosis separate from what you observed.",
+            "Confirm the requester is authorized.",
+            "Record expected versus observed behavior.",
+            "Name the next owner and the decision needed.",
+          ],
+        },
+        {
+          title: "Choose the tool only after the workflow earns its place",
+          description:
+            "Have a support lead test the sequence on fabricated or approved cases. If the sequence is useful but difficult to maintain consistently, evaluate whether SupportLoop could make those checks and handoffs part of the agent's workflow. Product capabilities and integration fit would need to be demonstrated; no automated connection or time saving is claimed here.",
+        },
+      ],
+    },
+    {
+      id: "alternatives",
+      title: "Your best options",
+      navigationLabel: "Alternative options",
+      layout: "table",
+      defaultOpen: true,
+      summary:
+        "Choose based on the actual bottleneck. A new platform is not automatically the best answer.",
+      columns: ["Option", "Best fit", "Tradeoff / what to check"],
+      items: [
+        {
+          title: "Existing documentation + manual checklist",
+          description: "Keep the workflow in your current tools.",
+          cells: [
+            "Existing documentation + manual checklist",
+            "The scenarios are infrequent and agents already route them consistently.",
+            "Lowest process change; someone still owns keeping the checklist aligned with product changes.",
+          ],
+        },
+        {
+          title: "Configure your current support system",
+          description: "Evaluate the tooling you already use.",
+          cells: [
+            "Configure your current support system",
+            "Your existing system can capture the needed fields and route cases without awkward workarounds.",
+            "Check available features, plan restrictions, and maintenance effort before buying anything new.",
+          ],
+        },
+        {
+          title: "SupportLoop as an alternative",
+          description: "Evaluate the proposed guided-workflow approach.",
+          cells: [
+            "SupportLoop · proposed alternative",
+            "Inconsistent diagnostic steps or incomplete handoffs are confirmed, and existing tooling does not address them well.",
+            "Ask for a walkthrough using these three Linear scenarios. Verify capabilities, integration fit, security, and cost; this practice concept does not establish them.",
           ],
         },
       ],
     },
   ],
+  callToAction: {
+    message:
+      "Happy to walk you through the invitation, guest-access, and Triage scenarios—and show how a SupportLoop workflow could keep the first check, next owner, and handoff together. We can use those examples to decide whether your existing tools already cover the need.",
+  },
   recommendedActions: [
-    "Have a support lead validate the product steps and fill the placeholders before customer use.",
-    "Replace proposed escalation owners with your real queues and security procedure.",
-    "Pilot the kit on fabricated scenarios, then revise it using reviewer feedback rather than assuming a performance improvement.",
+    "Validate the hypothesis using approved case evidence.",
+    "Try the proposed workflow before evaluating a platform.",
+    "Compare the existing system with the proposed alternative using the same scenarios.",
   ],
   sources: [
     {
       label: "Invite members",
       url: invite,
       checkedAt: "2026-10-07",
-      note: "Invitation delivery and identity-provider provisioning branches.",
+      note: "Provisioning and invitation paths; not ticket volume.",
     },
     {
       label: "Members and roles",
       url: roles,
       checkedAt: "2026-10-07",
-      note: "Guest access and cross-team project visibility.",
+      note: "Guest and team-access boundaries.",
     },
     {
       label: "Triage",
       url: triage,
       checkedAt: "2026-10-07",
-      note: "Default view exclusion and accepting an issue into the workflow.",
+      note: "Triage status and view behavior.",
     },
     {
       label: "Linear brand guidelines",
       url: "https://linear.app/brand",
       checkedAt: "2026-10-07",
-      note: "Logo assets and monochrome palette. Brand use does not imply affiliation.",
+      note: "Brand assets, not an affiliation or endorsement.",
     },
   ],
   gift: { status: "omitted" },
   task5Hook:
-    "I put together an operations field guide around three documented Linear workflows: invitations, guest visibility, and Triage. It includes diagnostic playcards, a proposed routing matrix, and an escalation handoff your support lead can adapt.",
+    "I mapped three documented Linear support scenarios into a proposed first-check and handoff workflow, with a comparison of existing-tool options and a SupportLoop approach. The brief distinguishes public facts from the hypothesis we would need to validate.",
   warnings: [
-    "Reference example authored from public documentation, not live autonomous generation.",
-    "No claim about Linear hiring, ticket frequency, backlog, or team performance has been verified or made.",
+    "Authored practice reference, not live autonomous generation.",
+    "No hiring, backlog, support-performance, similar-company outcome, or gift approval was supplied.",
   ],
 });

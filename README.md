@@ -1,56 +1,62 @@
-# Personalized assets — recipient-first prototype
+# Personalized assets
 
-The repository contains an authored support example and a prompt-first AI writer with durable publication. The deployed writer is currently blocked by Vercel AI Gateway billing verification; it has not yet completed a live generated asset.
+Personalized, prospect-facing briefs—not internal account reports or the separate outbound email.
+
+## The required six-part structure
+
+1. Headline.
+2. Current situation: verified public facts.
+3. Likely problem: a labelled hypothesis, supported by reasoning and sourced comparable-company evidence when available.
+4. Solution: useful practical work tied to the seller's actual capabilities.
+5. Best alternative options: compare credible approaches with the seller as one option, including fit and tradeoffs.
+6. CTA: show something specific; optionally offer an explicitly approved gift.
+
+This supersedes the earlier instruction to keep all seller invitations outside the asset. The CTA belongs in the asset; Task 5 remains a separate introductory email. The generator contract enforces the four middle sections in order, plus a headline and CTA. Gift-offer approval is supplied separately by the caller, never invented by the model.
+
+## Architecture
+
+Clay sends one prompt → the API forwards it to a separate content generator → validated recipient content is stored → Vercel serves the branded page.
+
+**Vercel hosts the website, forwarding API, and finished documents only. There is no AI Gateway dependency or model-billing requirement.** The external generator connection is not configured or verified yet. A prompt for a new company returns an explicit failure until that connection works; it never silently returns the Linear example.
+
+The original `enrichflow-gtm-audit` repository uses a Claude worker configured for the separate OpenClaw Mac. Its pipeline and services are untouched. That older, long-running pipeline is not the new two-minute generator. A connection check to its configured Mac timed out on October 7, 2026; this does not prove that the original worker is stopped.
 
 ## Open it
 
 Run `npm install`, then `npm run dev`.
 
-- `/examples/linear-support`: the authored recipient-facing reference.
-- `/a/linear-support-onboarding`: the same reference through the asset URL contract.
-- `/`: operator workspace, clearly separate from the prospect page.
-- `/api/assets/linear-support-onboarding/download`: editable Markdown kit.
+- `/examples/linear-support`: authored Linear reference.
+- `/a/linear-support-onboarding`: same reference through the asset URL contract.
+- `/api/assets/linear-support-onboarding/download`: complete editable Markdown.
+- `/`: operator input guide and JSON-body builder; not an unauthenticated generation form.
 
-The reference is a standalone support operations field guide: three diagnostic playcards, a proposed escalation matrix, a five-day onboarding checklist, and an internal handoff template. It uses Linear's public documentation and official logo assets. It makes no claim about Linear hiring, ticket volume, internal processes, or performance. SupportLoop is the fictional seller from the exercise. There is no affiliation or endorsement.
+Linear now demonstrates this exact structure using public product documentation. Its former training-kit content was replaced after the user explicitly requested the six-part brief. The presentation uses a branded cover, readable text, compact contents, expandable chapters, interactive checks, and editable download. All four brief body sections open by default. The final CTA offers a walkthrough; no gift is promised because none was approved. The example is authored, and SupportLoop is a fictional practice seller.
 
-## Correct reference and reuse
+The visual reference is the newer `avik-gtm/enrichflow-gtm-audit`, not `enrichflow-gtm-playbook`. Branding is recipient-specific. The layout supports tables, cards, steps, checklists, and reusable templates for different industries; it does not force every company into the Linear support content.
 
-The design/editorial reference is **avik-gtm/enrichflow-gtm-audit**, the newer Outbound Growth Playbook confirmed by the user. The original repo is untouched.
+## Input
 
-Reused principles: company identity and palette, useful work first, and source receipts. The shared layout is now a working document with contents, scope, open sections, and implementation notes—not the GTM reference's landing-page cover or an email. No greeting, subject, pitch, or sales CTA is part of the asset.
+Send `{"prompt":"your plain-language context"}`. Include product/capabilities, prospect, buyer, observed facts/source text, your reasoning, any genuine comparable-company evidence, and what you can demonstrate in the CTA. Scores, universe filters, LinkedIn URLs, and approved brand assets are optional. You never have to build the output schema yourself. [Exact payload guide](docs/CLAY_REQUEST_GUIDE.md).
 
-The renderer is data-driven. It supports checklists, true tables, cards, steps, and copyable working templates. Legacy `replies` data remains readable without email-composer styling. New generation instructions prohibit that layout and keep seller-to-prospect copy only in the private `task5Hook`. Reusing the shell does not mean reusing Linear's facts or the support asset for unrelated sellers.
+The current contract is **supplied-context only**: the separate writer must not claim it visited a website or verified a LinkedIn profile. Pass relevant findings from Clay. Missing evidence means a proposed plan, not fabricated findings. Unsupplied reference and logo URLs are rejected. See [Clay setup](docs/CLAY_SETUP.md).
 
-## What to pass
+## Generator connection
 
-Send one JSON field: `{"prompt":"your plain-language context"}`. In that prompt include: seller/product; prospect name/domain; selected buyer; observed facts with relevant source text; and your reasoning, clearly labelled as a hypothesis. Task 1 filters, scores, profile findings, approved brand assets, and a preferred document type are optional. The operator page builds this exact JSON body without attempting an unauthenticated POST.
+`ASSET_GENERATOR_URL` identifies a separately hosted writer accepting `{systemPrompt, input, outputSchema}` and returning generated asset JSON. Hosted requests require `ASSET_GENERATOR_TOKEN`. The forwarding API enforces HTTPS, forbids redirects, times out after 90 seconds, bounds response size, validates the schema, and sanitizes failures.
 
-The current writer does not fetch domains, LinkedIn profiles, or source URLs. Pass actual findings from Clay if you want evidence-specific material. A source link alone is not proof. See [Clay setup](docs/CLAY_SETUP.md) for a copyable prompt.
+This adapter is implemented and contract-tested; that is **not** proof of a live connected generator. No new-company output or sub-120-second end-to-end run has been verified. Do not copy the original GTM worker's broad shell/tool permissions into a public endpoint. Deployment of a new worker requires an identified runtime and secure authentication.
 
-## What is working
+## Safety and storage
 
-- Fully authored reference with real source links and checked dates.
-- Source-backed diagnostic playcards; proposals distinguished from documented behavior.
-- Prospect branding, document contents, open working sections, copy buttons, interactive checklists, editable download.
-- Recipient-only projection for page, public JSON, and download. Internal Task 5 hook and research seeds do not ship to the recipient.
-- Explicit reference API mode and an approved-generator adapter with typed schema validation.
-- HTTPS-only external links, safe text rendering, hosted POST authentication fails closed.
-- Bundled reference survives server restarts without a database.
-
-## What is NOT complete
-
-Direct writing is implemented using AI SDK structured output, the configured `AI_GATEWAY_MODEL`, and deployment OIDC. The model receives your normalized prompt, server-side recipient-first instructions, and the output schema. This path has no web, LinkedIn, screenshot, or audit tools. It can write from supplied context and produce clearly labelled proposed plans; it cannot verify company facts. Unsupplied source/logo URLs are rejected. `ASSET_GENERATOR_URL` remains an alternative external-service adapter.
-
-Production authentication and a dedicated public Blob store are configured. The AccessProof request reached the writer but failed: Vercel AI Gateway returned HTTP 403 requiring a valid payment method, and the asset API returned HTTP 503. No AccessProof asset was created. Do not claim live generation or the <120 second target is verified. See [the exact request](examples/requests/accessproof-northstar.json) and [run record](docs/ACCESSPROOF_API_RUN.md).
-
-Arbitrary-company research, verified brand extraction, and browser accessibility testing are not implemented. The older fallback module remains for historical tests only and is never substituted for failed generation. Authenticated prompts and Task 5 handoffs must remain private; only recipient content is saved in public Blob storage.
-
-Gift fulfillment is not implemented. No gifts are purchased and no hobbies are inferred. Suggested gifts do not appear as redeemable gifts on public pages.
+- Hosted POSTs fail closed without `ASSET_API_KEY`.
+- Finished public documents use the dedicated Blob store. No prompts or operator-only data are stored there.
+- Public pages, JSON, and downloads exclude scores, research seeds, warnings, and the private `task5Hook`.
+- The authored reference remains available without a generator or database.
+- Source facts, inferences, and unknowns stay distinct. No fabricated metrics, quotes, hobbies, or purchased gifts.
+- Gift fulfillment, arbitrary-company research, and verified brand extraction are not implemented.
 
 ## Verify
 
-`npm run typecheck`, `npm test`, and `npm run build`.
+`npm run verify` runs TypeScript, unit/contract tests, and the production build. Browser verification must also check desktop/mobile layout, section navigation, checklist state, copying, and downloads.
 
-Tests cover content completeness, schema validity, private-field removal, source links, markdown export, safe URLs, table dimensions, explicit reference mode, model failure handling, durable-storage gating, and API authentication/status boundaries.
-
-See [Clay setup](docs/CLAY_SETUP.md), [implementation plan](PLAN.md), and [reference/source notes](docs/REFERENCE.md).
+See [implementation plan](PLAN.md), [reference notes](docs/REFERENCE.md), and [current revision record](docs/HOSTING_AND_LAYOUT_REVISION.md). Historical Gateway run records describe a removed architecture, not a current requirement.

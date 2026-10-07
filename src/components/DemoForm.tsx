@@ -8,7 +8,9 @@ Prospect: Northstar Commerce, a fictional online retailer. No real domain suppli
 Buyer: Head of Digital Product.
 Observed facts: None about this fictional prospect. A checkout redesign is a hypothetical practice scenario, not a verified event. No accessibility audit has been performed.
 My reasoning: A redesign is a useful moment to plan accessibility testing. It is not proof of existing defects.
-Create a standalone checkout testing plan with test cases, a remediation-ticket template, and a release checklist. Label it as a fictional practice plan. No invented findings, sources, metrics, or brand identity. No email, pitch, or gift. Keep qualification and outreach notes private.`;
+Known capabilities: testing customer-facing websites and applications for accessibility problems and coordinating remediation. No other capabilities are verified.
+Similar-company evidence: None supplied; do not invent a case study.
+Create the six-part brief: headline, current situation, likely problem, solution, best alternative options (include AccessProof as one option), and a CTA offering a walkthrough of the proposed checkout testing plan. Label this fictional practice scenario. No invented findings, sources, metrics, or brand identity. No gift approved. Keep qualification and the separate outbound email private.`;
 
 export function DemoForm() {
   const [prompt, setPrompt] = useState(samplePrompt);
@@ -43,10 +45,10 @@ export function DemoForm() {
       </div>
       <CopyButton text={payload} label="Copy JSON body" />
       <p className="operator-note">
-        The body has only one field: prompt. You do not need to design the
-        output JSON or write the asset yourself. A successful API response
-        includes assetUrl for Task 4 and a separate, private task5Hook for Task
-        5.
+        The simplest body has only one field: prompt. You do not need to design
+        the output JSON or write the six sections yourself. A successful API
+        response includes assetUrl for Task 4 and a separate, private task5Hook
+        for Task 5.
       </p>
     </section>
   );

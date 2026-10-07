@@ -3,8 +3,15 @@ import Image from "next/image";
 import type { AssetSection } from "@/lib/schemas";
 import type { PublicAsset } from "@/lib/public-asset";
 import { CopyButton, DownloadKit, PracticeChecklist } from "./AssetActions";
+import { DocumentNavigation } from "./DocumentNavigation";
 
-function SectionContents({ section }: { section: AssetSection }) {
+function SectionContents({
+  section,
+  brief = false,
+}: {
+  section: AssetSection;
+  brief?: boolean;
+}) {
   if (section.layout === "table" && section.columns)
     return (
       <div
@@ -45,7 +52,7 @@ function SectionContents({ section }: { section: AssetSection }) {
 
   // Legacy "replies" records remain readable, but never get an email composer shell.
   const isTemplate =
-    section.layout === "narrative" || section.layout === "replies";
+    !brief && (section.layout === "narrative" || section.layout === "replies");
   return (
     <div className={`module-grid ${isTemplate ? "templates" : section.layout}`}>
       {section.items.map((item, index) => (
@@ -107,13 +114,17 @@ function SectionContents({ section }: { section: AssetSection }) {
 }
 
 export function AssetView({ asset }: { asset: PublicAsset }) {
+  const brief = asset.documentFormat === "six_part_brief";
   const style = {
     "--accent": asset.brandColor,
     "--brand-ink": asset.brandBackground || "#222326",
     "--brand-surface": asset.brandSurface || "#f4f5f8",
   } as CSSProperties;
   return (
-    <main className="asset-page" style={style}>
+    <main
+      className={`asset-page${brief ? " personalized-brief" : ""}`}
+      style={style}
+    >
       <a className="skip-link" href="#asset-content">
         Skip to document
       </a>
@@ -136,69 +147,65 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
           <DownloadKit slug={asset.slug} />
         </div>
       </div>
-      <div className="page-shell document-layout">
-        <aside className="document-sidebar">
-          <nav aria-label="Document contents">
-            <p className="eyebrow">Contents</p>
-            <ol>
-              {asset.sections.map((section, index) => (
-                <li key={section.id}>
-                  <a href={`#${section.id}`}>
-                    <span>{String(index + 1).padStart(2, "0")}</span>
-                    {section.navigationLabel || section.title}
-                  </a>
-                </li>
-              ))}
-            </ol>
-            <a className="supporting-link" href="#implementation">
-              Implementation notes
-            </a>
-          </nav>
-          <p className="sidebar-credit">
-            {asset.preparedBy || "Independently prepared"}
+      <header className="document-cover">
+        <div className="page-shell document-header">
+          <p className="eyebrow">
+            {asset.documentLabel || asset.assetType.replaceAll("_", " ")}
           </p>
-        </aside>
-        <div className="document-body" id="asset-content">
-          <header className="document-header">
-            <p className="eyebrow">
-              {asset.documentLabel || asset.assetType.replaceAll("_", " ")}
-            </p>
-            <h1>{asset.title}</h1>
-            <p className="document-subtitle">{asset.subtitle}</p>
-            <dl className="document-meta">
-              <div>
-                <dt>Company</dt>
-                <dd>{asset.preparedFor}</dd>
-              </div>
-              {asset.recipientTitle ? (
-                <div>
-                  <dt>Working audience</dt>
-                  <dd>{asset.recipientTitle}</dd>
-                </div>
-              ) : null}
-            </dl>
-            <div className="scope-note">
-              <strong>Scope</strong>
-              <p>
-                {asset.useNote ||
-                  "A proposed working document. Validate assumptions against current evidence and internal policies before use."}
-                {!asset.sources.length &&
-                !asset.evidence.some((item) => item.sourceUrl)
-                  ? " No verified source material supplied."
-                  : null}
-              </p>
+          <h1>{asset.title}</h1>
+          <p className="document-subtitle">{asset.subtitle}</p>
+          <dl className="document-meta">
+            <div>
+              <dt>Company</dt>
+              <dd>{asset.preparedFor}</dd>
             </div>
-            <p className="document-summary">{asset.executiveSummary}</p>
-          </header>
+            {asset.recipientTitle ? (
+              <div>
+                <dt>Working audience</dt>
+                <dd>{asset.recipientTitle}</dd>
+              </div>
+            ) : null}
+            <div>
+              <dt>Prepared by</dt>
+              <dd>{asset.preparedBy || "Independently prepared"}</dd>
+            </div>
+          </dl>
+        </div>
+      </header>
+      <div className="page-shell document-layout">
+        <div className="document-body" id="asset-content">
+          {!brief ? (
+            <div className="document-introduction">
+              <p className="document-summary">{asset.executiveSummary}</p>
+              <div className="scope-note">
+                <strong>Scope</strong>
+                <p>
+                  {asset.useNote ||
+                    "A proposed working document. Validate assumptions against current evidence and internal policies before use."}
+                  {!asset.sources.length &&
+                  !asset.evidence.some((item) => item.sourceUrl)
+                    ? " No verified source material supplied."
+                    : null}
+                </p>
+              </div>
+            </div>
+          ) : null}
+          <DocumentNavigation
+            sections={asset.sections.map((section) => ({
+              id: section.id,
+              title: section.navigationLabel || section.title,
+            }))}
+          />
 
           {asset.sections.map((section, index) => (
-            <section
+            <details
               className="chapter"
               key={section.id}
               id={section.id}
+              open={section.defaultOpen ?? index === 0}
               aria-labelledby={`${section.id}-title`}
             >
-              <header className="chapter-heading">
+              <summary className="chapter-heading">
                 <span className="chapter-number">
                   {String(index + 1).padStart(2, "0")}
                 </span>
@@ -206,20 +213,54 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
                   <h2 id={`${section.id}-title`}>{section.title}</h2>
                   {section.summary ? <p>{section.summary}</p> : null}
                 </div>
-              </header>
-              <SectionContents section={section} />
-            </section>
+                <span className="chapter-toggle" aria-hidden="true">
+                  +
+                </span>
+              </summary>
+              <div className="chapter-content">
+                <SectionContents section={section} brief={brief} />
+              </div>
+            </details>
           ))}
 
-          <section className="implementation-notes" id="implementation">
-            <h2>Implementation notes</h2>
-            <p className="editor-note">{asset.nonObviousInsight}</p>
-            <ol>
-              {asset.recommendedActions.map((action) => (
-                <li key={action}>{action}</li>
-              ))}
-            </ol>
-          </section>
+          {!brief ? (
+            <section className="implementation-notes" id="implementation">
+              <h2>Implementation notes</h2>
+              <p className="editor-note">{asset.nonObviousInsight}</p>
+              <ol>
+                {asset.recommendedActions.map((action) => (
+                  <li key={action}>{action}</li>
+                ))}
+              </ol>
+            </section>
+          ) : null}
+          {asset.callToAction ? (
+            <section className="document-cta" aria-labelledby="cta-title">
+              <p className="eyebrow">Next step</p>
+              <h2 id="cta-title">See how it would work</h2>
+              <p>{asset.callToAction.message}</p>
+              {asset.callToAction.url ? (
+                <a
+                  className="button"
+                  href={asset.callToAction.url}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  {asset.callToAction.buttonLabel || "Arrange a walkthrough"} ↗
+                </a>
+              ) : null}
+              {asset.approvedGiftOffer ? (
+                <p className="gift-offer">
+                  If your company policy allows, happy to send over{" "}
+                  {asset.approvedGiftOffer.label}.
+                  {asset.approvedGiftOffer.policyNote
+                    ? ` ${asset.approvedGiftOffer.policyNote}`
+                    : ""}
+                </p>
+              ) : null}
+            </section>
+          ) : null}
+          {brief ? <p className="brief-scope">{asset.useNote}</p> : null}
           {asset.evidence.length ? (
             <details className="supporting-detail">
               <summary>Background for these recommendations</summary>

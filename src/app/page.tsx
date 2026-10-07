@@ -6,21 +6,21 @@ export default function HomePage() {
       <p className="eyebrow">
         Operator workspace · private context stays out of the document
       </p>
-      <h1>Build the asset. Keep the email separate.</h1>
+      <h1>Your context in. A personalized brief out.</h1>
       <p>
-        Task 4 is a useful working document for the prospect: a plan, report,
-        map, comparison, or toolkit. Task 5 is the message that introduces it.
-        They are different outputs.
+        Task 4 follows your six-part structure: headline, current situation,
+        likely problem, solution, alternative options, and a specific CTA. Task
+        5 is the separate email that introduces the asset.
       </p>
       <section className="studio-preview">
         <div>
           <p className="eyebrow">
             Authored reference · not an API-generated result
           </p>
-          <h2>Linear: support operations field guide</h2>
+          <h2>Linear: a personalized support brief</h2>
           <p>
-            Diagnostic playcards, an escalation routing matrix, a five-day
-            onboarding plan, and a reusable handoff template. No email framing.
+            Public workflow facts, a clearly labelled hypothesis, a practical
+            solution, an honest options comparison, and a walkthrough CTA.
           </p>
         </div>
         <a className="button" href="/examples/linear-support">
@@ -58,6 +58,12 @@ export default function HomePage() {
           prospect’s document.
         </p>
         <p>
+          Include sourced examples from similar companies if you want them used.
+          No examples supplied means no invented case studies. To include a gift
+          offer, add the separate approvedGiftOffer field only after you have
+          approved the gift and its terms. It does not purchase a gift.
+        </p>
+        <p>
           <strong>A domain or LinkedIn URL is not enough for research.</strong>{" "}
           The current writer does not open those pages. Pass the useful findings
           from Clay, not just the links. Without evidence, the result must be a
@@ -65,27 +71,16 @@ export default function HomePage() {
         </p>
       </section>
       <section className="generation-status" aria-labelledby="status-title">
-        <h2 id="status-title">Model connection: setup still required</h2>
+        <h2 id="status-title">Website and content generation are separate</h2>
         <p>
-          Last checked October 7, 2026, against this project in Avik Ghimire’s
-          projects. Hosting is working. A fresh model test returned AI Gateway’s
-          “valid credit card on file” verification requirement. This is specific
-          to the model service—not an overdue hosting bill or a different Vercel
-          account.
+          Vercel hosts the pages, receives Clay requests, and stores finished
+          documents. A separate generator writes the content. No AI Gateway is
+          used or required.
         </p>
         <p>
-          The original GTM playbook uses a local Claude worker, so it does not
-          test this new Gateway connection. The workspace owner can review{" "}
-          <a
-            href="https://vercel.com/avik-ghimires-projects/~/ai-gateway"
-            target="_blank"
-            rel="noreferrer"
-          >
-            AI Gateway setup
-          </a>{" "}
-          or connect an approved alternative. No payment settings were changed,
-          and no AccessProof asset was generated. The two-minute target is still
-          unverified.
+          The Linear example works independently of the generator. New-company
+          generation still needs a verified connection to the separate service;
+          the two-minute target has not yet been measured successfully.
         </p>
       </section>
       <DemoForm />

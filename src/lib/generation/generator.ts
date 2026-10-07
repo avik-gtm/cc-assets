@@ -6,13 +6,16 @@ import {
 import { z } from "zod";
 import { linearSupportAsset } from "@/lib/examples/linear-support";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
-import { generateWithGateway } from "./gateway";
+import { CONTEXT_ONLY_RULES } from "./context-rules";
 
 export type GenerationResult = {
   asset: GeneratedAsset;
   mode: "reference" | "agent";
   warnings: string[];
-  metadata?: Awaited<ReturnType<typeof generateWithGateway>>["metadata"];
+  metadata?: {
+    provider: "external";
+    researchMode: "supplied_context_only";
+  };
 };
 
 export class GenerationUnavailableError extends Error {
@@ -30,6 +33,25 @@ async function callApprovedAgentService(
 ): Promise<GeneratedAsset> {
   const endpoint = process.env.ASSET_GENERATOR_URL;
   if (!endpoint) throw new Error("ASSET_GENERATOR_URL is not configured.");
+  const url = new URL(endpoint);
+  const localDevelopment =
+    !process.env.VERCEL &&
+    process.env.NODE_ENV !== "production" &&
+    ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+  if (
+    url.username ||
+    url.password ||
+    url.hash ||
+    (url.protocol !== "https:" &&
+      !(localDevelopment && url.protocol === "http:"))
+  ) {
+    throw new Error(
+      "Generator URL must use HTTPS without embedded credentials.",
+    );
+  }
+  if (process.env.VERCEL && !process.env.ASSET_GENERATOR_TOKEN) {
+    throw new Error("Hosted generation requires a private service token.");
+  }
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -40,19 +62,65 @@ async function callApprovedAgentService(
         : {}),
     },
     body: JSON.stringify({
-      systemPrompt: PERSONALIZED_ASSET_SYSTEM_PROMPT,
+      systemPrompt: `${PERSONALIZED_ASSET_SYSTEM_PROMPT}\n${CONTEXT_ONLY_RULES}`,
       input,
       outputSchema: z.toJSONSchema(generatedAssetSchema),
     }),
     signal: AbortSignal.timeout(90_000),
     cache: "no-store",
+    redirect: "error",
   });
 
   if (!response.ok) {
     throw new Error(`Agent service returned ${response.status}.`);
   }
 
-  return generatedAssetSchema.parse(await response.json());
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error("Generator returned an empty body.");
+  const chunks: Uint8Array[] = [];
+  let size = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > 1_000_000) throw new Error("Generator response exceeds 1 MB.");
+      chunks.push(value);
+    }
+  } finally {
+    await reader.cancel();
+    reader.releaseLock();
+  }
+  const asset = generatedAssetSchema.parse(
+    JSON.parse(Buffer.concat(chunks).toString("utf8")),
+  );
+  const supplied = JSON.stringify(input);
+  const references = [
+    ...asset.sources.map((source) => source.url),
+    ...asset.evidence.map((item) => item.sourceUrl),
+    ...asset.sections.flatMap((section) =>
+      section.items.map((item) => item.sourceUrl),
+    ),
+    asset.logoUrl,
+    asset.gift.claimUrl,
+    asset.callToAction?.url,
+  ].filter((url): url is string => Boolean(url));
+  if (references.some((url) => !supplied.includes(url))) {
+    throw new Error("Generator returned an unsupplied reference URL.");
+  }
+  if (
+    asset.documentFormat !== "six_part_brief" ||
+    asset.sections.map((section) => section.id).join(",") !==
+      "current-situation,likely-problem,solution,alternatives" ||
+    !asset.callToAction
+  ) {
+    throw new Error(
+      "Generator did not return the requested six-part structure.",
+    );
+  }
+  // A model cannot authorize a gift. Only the caller's explicit approved field
+  // can populate the public offer; this does not buy or issue anything.
+  return { ...asset, approvedGiftOffer: input.approvedGiftOffer };
 }
 
 export async function generateAsset(
@@ -67,48 +135,27 @@ export async function generateAsset(
       ],
     };
   }
-  if (!process.env.ASSET_GENERATOR_URL && !process.env.AI_GATEWAY_MODEL) {
+  if (!process.env.ASSET_GENERATOR_URL) {
     throw new GenerationUnavailableError(
-      "New-company generation is not configured. Configure AI_GATEWAY_MODEL with Gateway authentication or connect ASSET_GENERATOR_URL. No placeholder asset was published.",
+      "The separate content generator is not connected yet. The website and authored reference remain available. No placeholder asset was published.",
       "generation_not_configured",
     );
   }
 
   try {
-    if (!process.env.ASSET_GENERATOR_URL) {
-      const result = await generateWithGateway(input);
-      return {
-        asset: result.asset,
-        mode: "agent",
-        metadata: result.metadata,
-        warnings: [
-          "Generated from supplied context only. No live website, LinkedIn, or accessibility audit was performed.",
-        ],
-      };
-    }
     return {
       asset: await callApprovedAgentService(input),
       mode: "agent",
-      warnings: [],
+      metadata: { provider: "external", researchMode: "supplied_context_only" },
+      warnings: [
+        "Generated from supplied context only. No live website, LinkedIn, or accessibility audit was performed.",
+      ],
     };
-  } catch (error) {
-    // Only the observed Gateway verification response gets this diagnosis.
-    // A generic 403, timeout, or invalid output is not evidence of a billing issue.
-    const gatewayVerificationRequired =
-      !process.env.ASSET_GENERATOR_URL &&
-      error instanceof Error &&
-      "statusCode" in error &&
-      error.statusCode === 403 &&
-      /AI Gateway requires a valid credit card on file/i.test(error.message);
-    const code = gatewayVerificationRequired
-      ? "gateway_verification_required"
-      : "generation_failed";
-    console.error("approved_generator_failed", code);
+  } catch {
+    console.error("approved_generator_failed", "generation_failed");
     throw new GenerationUnavailableError(
-      gatewayVerificationRequired
-        ? "Vercel AI Gateway declined generation because its payment-method verification is incomplete. This is a model-service setup requirement, not a diagnosis of Vercel hosting billing. No placeholder was published. The workspace owner must review AI Gateway setup or configure an approved alternative model service."
-        : "The generation service failed or returned invalid output. No placeholder was published; the authored reference remains available. Check model-service access and runtime diagnostics before retrying.",
-      code,
+      "The separate content generator could not complete this request. No placeholder was published; the authored reference remains available.",
+      "generation_failed",
     );
   }
 }

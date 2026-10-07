@@ -58,6 +58,7 @@ export function assetToMarkdown(asset: PublicAsset): string {
         "",
         item.usage || "",
         item.value || "",
+        item.classification ? `Evidence: ${item.classification}` : "",
         item.description,
       );
       if (item.procedure)
@@ -73,14 +74,24 @@ export function assetToMarkdown(asset: PublicAsset): string {
       if (item.sourceUrl) lines.push(`Source: ${item.sourceUrl}`);
     }
   }
-  lines.push(
-    "",
-    "## Implementation notes",
-    "",
-    asset.nonObviousInsight,
-    "",
-    ...asset.recommendedActions.map((action) => `- ${action}`),
-  );
+  if (asset.documentFormat !== "six_part_brief")
+    lines.push(
+      "",
+      "## Implementation notes",
+      "",
+      asset.nonObviousInsight,
+      "",
+      ...asset.recommendedActions.map((action) => `- ${action}`),
+    );
+  if (asset.callToAction) {
+    lines.push("", "## See how it would work", "", asset.callToAction.message);
+    if (asset.callToAction.url)
+      lines.push(`Walkthrough: ${asset.callToAction.url}`);
+    if (asset.approvedGiftOffer)
+      lines.push(
+        `If your company policy allows, happy to send over ${asset.approvedGiftOffer.label}. ${asset.approvedGiftOffer.policyNote || ""}`,
+      );
+  }
   if (asset.evidence.length)
     lines.push(
       "",

@@ -8,9 +8,11 @@
 - The renderer must keep working when the optional agent service is unavailable.
 - Do not add actual gift purchasing until organizer approval, a fixed budget, idempotency, and policy checks exist.
 - No secrets in source control. All external services use environment variables.
+- Vercel hosts pages, the forwarding API, and finished documents only. Generation runs separately; do not add Vercel AI Gateway or require Vercel model billing.
 - Target a synchronous response under 120 seconds. Keep the authored reference available without a model service; never publish generic fallback copy as a finished personalized asset.
 - Use enrichflow-gtm-audit as the visual/editorial reference, not the older enrichflow-gtm-playbook repository.
 - Separate operator-only context from public assets. Task 5 hooks, lead scores, qualification logic, warnings, and research seeds must not leak into public pages, downloads, or JSON.
+- New assets follow the user's six-part format: headline, current situation, likely problem, solution, alternative options including the seller, and public CTA. Task 5 is still separate. No invented case histories, competitor weaknesses, or gift approval; gift offers come only from explicit caller approval.
 
 <!-- BEGIN:nextjs-agent-rules -->
 
