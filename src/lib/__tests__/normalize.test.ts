@@ -3,7 +3,9 @@ import { normalizeAssetRequest } from "@/lib/normalize";
 
 describe("normalizeAssetRequest", () => {
   it("accepts a raw prompt", () => {
-    expect(normalizeAssetRequest("Company: Acme\nSignal: Active hiring").prompt).toContain("Acme");
+    expect(
+      normalizeAssetRequest("Company: Acme\nSignal: Active hiring").prompt,
+    ).toContain("Acme");
   });
 
   it("accepts Clay-friendly aliases and normalizes URLs", () => {
@@ -17,6 +19,9 @@ describe("normalizeAssetRequest", () => {
 
     expect(result.companyDomain).toBe("acme.com");
     expect(result.personLinkedInUrl).toBe("https://linkedin.com/in/jane");
-    expect(result.sourceUrls).toEqual(["https://acme.com/careers", "https://acme.com/trust"]);
+    expect(result.sourceUrls).toEqual([
+      "https://acme.com/careers",
+      "https://acme.com/trust",
+    ]);
   });
 });

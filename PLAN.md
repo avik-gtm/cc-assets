@@ -1,65 +1,30 @@
-# Personalized Asset Generator — implementation plan
+# Corrected implementation plan
 
-## Goal
+## Complete: one recipient-first support prototype
 
-Turn a short Clay prompt containing the seller brief, universe logic, scoring signal, signal reasoning, selected buyer, and relevant URLs into a useful, source-conscious personalized asset with a hosted URL.
+1. Confirm the newer `enrichflow-gtm-audit` reference.
+2. Author a useful support onboarding kit using public Linear documentation.
+3. Match the editorial shell: recipient logo/colors, specific cover, work first, supporting research underneath.
+4. Add working copy, checklist, and editable-download controls.
+5. Keep operator reasoning and Task 5 copy off the public asset.
+6. Test content, API, public rendering, and safety boundaries; publish a preview for review.
 
-## Architectural decision
+## Next: live generation, once the content direction is accepted
 
-Use a synchronous Next.js/Vercel API rather than importing a prebuilt Clay workflow. Clay builds the request live; this service normalizes it, generates an asset, validates it, stores it, renders it, and returns the URL.
+The next milestone is not more templates. It is to reproduce this quality for a previously unseen company from one short prompt.
 
-## Reused bones from the GTM playbook
+- Connect an approved research/writing service. The present adapter accepts `systemPrompt`, `input`, and `outputSchema` and validates its JSON result.
+- Extract seller, recipient, buyer, and source material without confusing their roles.
+- Choose one useful deliverable based on the problem and evidence, not keyword substitution.
+- Fetch a bounded set of public sources and verified brand assets. No private LinkedIn scraping or claimed research when pages are inaccessible.
+- Draft the actual work; reject unsupported factual claims and internal qualification leakage.
+- Store generated recipient content durably and return the hosted URL plus operator-only outreach hook.
+- Measure at least three uncached, real-company runs. Include retrieval, writing, validation, storage, and publication in the <120 second measurement. Report failures and scope reductions.
 
-1. A staged generation pipeline rather than one uncontrolled prompt.
-2. Strong prospect-specific hero and branding.
-3. Evidence first, followed by interpretation.
-4. A non-obvious but supportable insight.
-5. A useful main module rather than generic prose.
-6. “What this means” and concrete next actions.
-7. Source retention, quality gates, hosted delivery, and a clean handoff.
+Do not inherit the old 20–25 minute pipeline and call it a two-minute system. Do not rebuild/install the frontend per prospect. Reuse the deployed renderer and pass validated content.
 
-## Replaced assumptions
+## Generalize only after the first live case works
 
-- The output is not always a GTM playbook.
-- The page can become an audit, report, map, comparison, or action plan.
-- The selected buyer and Task 1–3 reasoning are first-class inputs.
-- An optional gift module is separate from the core asset and fails open by omission.
+Keep the presentation components reusable while allowing the central asset to change. Support kit, comparison, coverage worksheet, and action backlog are examples, not a promise that all are implemented. The first useful artifact should stand on its own without the recipient needing to buy or book a call.
 
-## Delivery phases
-
-### Phase 1 — bones (this repository version)
-
-- Prompt-only and structured request support.
-- Stable schemas and normalization.
-- Deterministic fallback generator.
-- Flexible block renderer.
-- Hosted asset route and retrieval API.
-- Vercel Blob adapter with local in-memory fallback.
-- Customer-support example and tests.
-
-### Phase 2 — meat
-
-- Plug an approved agent service into `ASSET_GENERATOR_URL`.
-- Use bounded roles: strategist, evidence critic, optional gift researcher, final writer.
-- Preserve the same request and response contracts.
-- Add source retrieval and claim-level citations.
-- Add brand extraction only when it fits the latency budget.
-
-### Phase 3 — gift fulfillment
-
-- Only after explicit organizer and spend approval.
-- Add allowlisted gift categories, policy checks, a fixed value cap, and idempotent issuance.
-- Never infer or use sensitive personal traits.
-
-## Performance budget
-
-| Stage | Target |
-| --- | ---: |
-| Request normalization and validation | 2 seconds |
-| Parallel planning, evidence review, optional public gift cue | 35–50 seconds |
-| Final asset writing | 20–35 seconds |
-| QA and schema repair | 10–15 seconds |
-| Storage and page publication | 3–8 seconds |
-| Total target | 80–110 seconds |
-
-The deterministic fallback should return in seconds when the agent service is unavailable.
+Competition use remains subject to organizer approval and recreation during the monitored build window. This repository is a personal-workspace prototype, not evidence of approval.

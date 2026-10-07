@@ -1,56 +1,52 @@
-# Clay setup — recreate during the monitored 30 minutes
+# Clay contract and current limits
 
-## Minimum live build
+## Test the authored reference
 
-1. Add the approved API key.
-2. Create one AI column named `Asset Request Prompt`.
-3. Map the product brief, Task 1 universe, Task 2 signal and logic, Task 3 buyer, company domain, and LinkedIn URLs.
-4. Create one HTTP API column that POSTs the prompt to `/api/assets`.
-5. Map `assetUrl` into a text/URL column.
-6. Test one row before running the final prospects.
-
-## Prompt for the Clay AI column
-
-```text
-Create one concise request for a personalized prospect asset.
-
-Include these labeled fields exactly when data exists:
-- Product
-- Problem solved
-- Prospect company
-- Company domain
-- Company LinkedIn
-- Universe and why this company qualified
-- Signal
-- Verified evidence
-- Signal logic or hypothesis
-- Score and score reasons
-- Selected buyer
-- Why this buyer owns the problem
-- Person LinkedIn
-- Source URLs
-
-Do not create the asset. Do not invent missing information. Clearly label hypotheses as hypotheses. Return plain text, not Markdown and not a JSON object.
-```
-
-## HTTP request
-
-The easiest body is:
+POST `/api/assets` with `Content-Type: application/json` and:
 
 ```json
-{
-  "prompt": "{{Asset Request Prompt}}"
-}
+{ "example": "linear-support" }
 ```
 
-Headers:
+This explicitly returns the saved reference. It does not interpret a company prompt or perform new research. The response says `generationMode: reference` and `storage: bundled` and includes a hosted `assetUrl`.
+
+## Plain-language input for live generation
+
+The API accepts `{"prompt":"..."}` or a plain-text body. Structured company fields are optional. You do not need to manually construct the full asset schema.
+
+Suggested context:
 
 ```text
-Authorization: Bearer {{approved secret}}
-Content-Type: application/json
-Idempotency-Key: {{Company Domain}}-{{Person LinkedIn}}
+Product: [Seller and what the product helps its customers do]
+Company: [Recipient company]
+Domain: [Recipient domain]
+Buyer: [Selected person's role]
+Universe: [Why this company entered the list]
+Signal: [What you actually observed]
+Signal logic: [Your hypothesis, clearly separate from facts]
+Verified evidence: [Specific observations and source text]
+Source URLs: [Relevant pages]
+Create one useful asset for this recipient. Complete part of their work.
+Keep my scoring, qualification notes, and outreach draft private.
 ```
 
-## Why plain text works
+**Current limitation:** an approved live generator must be connected via `ASSET_GENERATOR_URL`. Until then, this request returns 503 with an explanation; no generic asset is published. The reference remains readable.
 
-The API accepts one prompt and normalizes it into the internal schema. Clay does not need to construct the full asset document or escape a deeply nested JSON object.
+## Service contract
+
+The approved service receives `systemPrompt`, `input`, and the `GeneratedAsset` JSON schema. It must return a valid JSON object directly. The adapter allows 90 seconds for this call and rejects invalid output. It does not automatically supply web-research or model credentials.
+
+Required for hosted new-company generation:
+
+- `ASSET_GENERATOR_URL`, optionally `ASSET_GENERATOR_TOKEN`.
+- `ASSET_API_KEY` for authenticated Clay POSTs: `Authorization: Bearer [key]`.
+- `BLOB_READ_WRITE_TOKEN` or the supported linked Blob configuration for durable generated assets.
+- `NEXT_PUBLIC_APP_URL` set to the actual deployed origin if an override is needed; never set it to localhost in production.
+
+On Vercel, POST is denied when `ASSET_API_KEY` is absent. The public operator form intentionally does not store the key. Use Clay's credential mechanism for production requests. Public asset pages and downloads contain recipient content only; the POST response includes `task5Hook` for the operator.
+
+The public reference needs none of these secrets or storage services. Its data is bundled with the app.
+
+## Competition constraints
+
+Get the organizer's approval for the idea and runtime, then recreate the approved setup during the monitored window. Do not treat an existing deployment or this setup document as permission to use it on stage. No gift purchases are enabled.

@@ -1,5 +1,7 @@
 import { list, put } from "@vercel/blob";
 import { assetDocumentSchema, type AssetDocument } from "@/lib/schemas";
+import { linearSupportAsset } from "@/lib/examples/linear-support";
+import { toPublicAsset } from "@/lib/public-asset";
 
 type GlobalWithAssetStore = typeof globalThis & {
   __enrichflowAssetStore?: Map<string, AssetDocument>;
@@ -14,16 +16,32 @@ function memoryStore(): Map<string, AssetDocument> {
 }
 
 export function durableStorageEnabled(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID);
+  return Boolean(
+    process.env.BLOB_READ_WRITE_TOKEN || process.env.BLOB_STORE_ID,
+  );
 }
 
-export async function saveAsset(asset: AssetDocument): Promise<"blob" | "memory"> {
+export async function saveAsset(
+  asset: AssetDocument,
+): Promise<"blob" | "memory"> {
+  // Blob objects are public. Never persist the operator-only hook or research
+  // seeds there, even though the application also projects its public responses.
+  const publicRecord = assetDocumentSchema.parse({
+    ...toPublicAsset(asset),
+    generationMode: asset.generationMode,
+    task5Hook: "Withheld from public storage.",
+    warnings: [],
+  });
   if (!durableStorageEnabled()) {
-    memoryStore().set(asset.slug, asset);
+    if (process.env.VERCEL)
+      throw new Error(
+        "Durable asset storage is not configured. No temporary production URL was published.",
+      );
+    memoryStore().set(asset.slug, publicRecord);
     return "memory";
   }
 
-  await put(`assets/${asset.slug}.json`, JSON.stringify(asset), {
+  await put(`assets/${asset.slug}.json`, JSON.stringify(publicRecord), {
     access: "public",
     addRandomSuffix: false,
     allowOverwrite: true,
@@ -33,6 +51,7 @@ export async function saveAsset(asset: AssetDocument): Promise<"blob" | "memory"
 }
 
 export async function getAsset(slug: string): Promise<AssetDocument | null> {
+  if (slug === linearSupportAsset.slug) return linearSupportAsset;
   const memoryAsset = memoryStore().get(slug);
   if (memoryAsset) return memoryAsset;
 

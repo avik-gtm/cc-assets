@@ -16,10 +16,13 @@ const newsreader = Newsreader({
 
 export const metadata: Metadata = {
   title: "EnrichFlow Personalized Assets",
-  description: "Turn Clay qualification context into useful, evidence-conscious prospect assets.",
+  description:
+    "Turn Clay qualification context into useful, evidence-conscious prospect assets.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en" className={`${manrope.variable} ${newsreader.variable}`}>
       <body>{children}</body>

@@ -6,15 +6,25 @@ export const assetTypeSchema = z.enum([
   "report",
   "comparison",
   "action_plan",
+  "toolkit",
 ]);
 
 export const evidenceClassSchema = z.enum(["fact", "inference", "unknown"]);
 
-const optionalUrl = z.string().url().optional();
+export const safeUrlSchema = z
+  .string()
+  .url()
+  .refine((value) => /^https:\/\//i.test(value), "Use an HTTPS URL.");
+const optionalUrl = safeUrlSchema.optional();
+const logoUrlSchema = z.union([
+  z.string().regex(/^\/brands\/[a-z0-9.-]+\.(svg|png|webp)$/i),
+  safeUrlSchema,
+]);
 
 export const assetRequestSchema = z
   .object({
     prompt: z.string().trim().max(50_000).optional(),
+    example: z.literal("linear-support").optional(),
     productDescription: z.string().trim().max(10_000).optional(),
     problemSolved: z.string().trim().max(10_000).optional(),
     universe: z.string().trim().max(10_000).optional(),
@@ -31,7 +41,7 @@ export const assetRequestSchema = z
     recipientTitle: z.string().trim().max(500).optional(),
     recipientReason: z.string().trim().max(5_000).optional(),
     personLinkedInUrl: optionalUrl,
-    sourceUrls: z.array(z.string().url()).max(30).default([]),
+    sourceUrls: z.array(safeUrlSchema).max(30).default([]),
     giftPreference: z.string().trim().max(1_000).optional(),
     giftSourceUrl: optionalUrl,
     giftClaimUrl: optionalUrl,
@@ -40,13 +50,13 @@ export const assetRequestSchema = z
     const hasPrompt = Boolean(value.prompt?.trim());
     const hasStructuredContext = Boolean(
       value.productDescription ||
-        value.universe ||
-        value.signal ||
-        value.companyDomain ||
-        value.companyName,
+      value.universe ||
+      value.signal ||
+      value.companyDomain ||
+      value.companyName,
     );
 
-    if (!hasPrompt && !hasStructuredContext) {
+    if (!hasPrompt && !hasStructuredContext && !value.example) {
       context.addIssue({
         code: "custom",
         path: ["prompt"],
@@ -57,7 +67,9 @@ export const assetRequestSchema = z
 
 export const sourceSchema = z.object({
   label: z.string().min(1).max(300),
-  url: z.string().url(),
+  url: safeUrlSchema,
+  note: z.string().max(1000).optional(),
+  checkedAt: z.string().date().optional(),
 });
 
 export const evidenceSchema = z.object({
@@ -65,7 +77,7 @@ export const evidenceSchema = z.object({
   value: z.string().min(1).max(1_000),
   detail: z.string().min(1).max(4_000),
   classification: evidenceClassSchema,
-  sourceUrl: z.string().url().optional(),
+  sourceUrl: optionalUrl,
 });
 
 export const sectionItemSchema = z.object({
@@ -74,25 +86,52 @@ export const sectionItemSchema = z.object({
   description: z.string().min(1).max(4_000),
   badge: z.string().max(100).optional(),
   classification: evidenceClassSchema.optional(),
-  sourceUrl: z.string().url().optional(),
+  sourceUrl: optionalUrl,
+  usage: z.string().max(1000).optional(),
+  checks: z.array(z.string().max(1000)).max(8).optional(),
+  cells: z.array(z.string().max(2000)).max(6).optional(),
 });
 
-export const sectionSchema = z.object({
-  id: z.string().min(1).max(100),
-  eyebrow: z.string().max(100).optional(),
-  title: z.string().min(1).max(300),
-  summary: z.string().max(4_000).optional(),
-  layout: z.enum(["cards", "table", "steps", "narrative"]),
-  items: z.array(sectionItemSchema).min(1).max(12),
-});
+export const sectionSchema = z
+  .object({
+    id: z.string().min(1).max(100),
+    eyebrow: z.string().max(100).optional(),
+    title: z.string().min(1).max(300),
+    summary: z.string().max(4_000).optional(),
+    layout: z.enum([
+      "cards",
+      "table",
+      "steps",
+      "narrative",
+      "replies",
+      "checklist",
+    ]),
+    columns: z.array(z.string().max(100)).max(6).optional(),
+    defaultOpen: z.boolean().optional(),
+    items: z.array(sectionItemSchema).min(1).max(12),
+  })
+  .superRefine((section, context) => {
+    if (
+      section.columns &&
+      section.items.some(
+        (item) => item.cells?.length !== section.columns?.length,
+      )
+    ) {
+      context.addIssue({
+        code: "custom",
+        path: ["items"],
+        message: "Each table row must match the column count.",
+      });
+    }
+  });
 
 export const giftSchema = z.object({
   status: z.enum(["included", "suggested", "omitted"]),
   title: z.string().max(300).optional(),
   message: z.string().max(2_000).optional(),
   preference: z.string().max(1_000).optional(),
-  sourceUrl: z.string().url().optional(),
-  claimUrl: z.string().url().optional(),
+  sourceUrl: optionalUrl,
+  claimUrl: optionalUrl,
   confidence: z.number().min(0).max(1).optional(),
   omissionReason: z.string().max(1_000).optional(),
 });
@@ -105,12 +144,27 @@ export const generatedAssetSchema = z.object({
   recipientName: z.string().max(500).optional(),
   recipientTitle: z.string().max(500).optional(),
   companyDomain: z.string().max(1_000).optional(),
-  companyLinkedInUrl: z.string().url().optional(),
-  personLinkedInUrl: z.string().url().optional(),
-  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).default("#6d5efc"),
+  companyLinkedInUrl: optionalUrl,
+  personLinkedInUrl: optionalUrl,
+  logoUrl: logoUrlSchema.optional(),
+  brandBackground: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+  brandSurface: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .optional(),
+  preparedBy: z.string().max(200).optional(),
+  documentLabel: z.string().max(100).optional(),
+  useNote: z.string().max(2000).optional(),
+  brandColor: z
+    .string()
+    .regex(/^#[0-9a-fA-F]{6}$/)
+    .default("#6d5efc"),
   executiveSummary: z.string().min(1).max(5_000),
   nonObviousInsight: z.string().min(1).max(3_000),
-  evidence: z.array(evidenceSchema).min(1).max(8),
+  evidence: z.array(evidenceSchema).max(8),
   sections: z.array(sectionSchema).min(2).max(8),
   recommendedActions: z.array(z.string().min(1).max(1_000)).min(1).max(6),
   sources: z.array(sourceSchema).max(30),
@@ -122,7 +176,7 @@ export const generatedAssetSchema = z.object({
 export const assetDocumentSchema = generatedAssetSchema.extend({
   slug: z.string().min(1).max(180),
   generatedAt: z.string().datetime(),
-  generationMode: z.enum(["fallback", "agent"]),
+  generationMode: z.enum(["fallback", "agent", "reference"]),
 });
 
 export type AssetRequest = z.infer<typeof assetRequestSchema>;

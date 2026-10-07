@@ -3,16 +3,26 @@ import {
   type AssetRequest,
   type GeneratedAsset,
 } from "@/lib/schemas";
-import { generateFallbackAsset } from "@/lib/generation/fallback";
+import { z } from "zod";
+import { linearSupportAsset } from "@/lib/examples/linear-support";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
 
 export type GenerationResult = {
   asset: GeneratedAsset;
-  mode: "fallback" | "agent";
+  mode: "reference" | "agent";
   warnings: string[];
 };
 
-async function callApprovedAgentService(input: AssetRequest): Promise<GeneratedAsset> {
+export class GenerationUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GenerationUnavailableError";
+  }
+}
+
+async function callApprovedAgentService(
+  input: AssetRequest,
+): Promise<GeneratedAsset> {
   const endpoint = process.env.ASSET_GENERATOR_URL;
   if (!endpoint) throw new Error("ASSET_GENERATOR_URL is not configured.");
 
@@ -27,6 +37,7 @@ async function callApprovedAgentService(input: AssetRequest): Promise<GeneratedA
     body: JSON.stringify({
       systemPrompt: PERSONALIZED_ASSET_SYSTEM_PROMPT,
       input,
+      outputSchema: z.toJSONSchema(generatedAssetSchema),
     }),
     signal: AbortSignal.timeout(90_000),
     cache: "no-store",
@@ -39,13 +50,22 @@ async function callApprovedAgentService(input: AssetRequest): Promise<GeneratedA
   return generatedAssetSchema.parse(await response.json());
 }
 
-export async function generateAsset(input: AssetRequest): Promise<GenerationResult> {
-  if (!process.env.ASSET_GENERATOR_URL) {
+export async function generateAsset(
+  input: AssetRequest,
+): Promise<GenerationResult> {
+  if (input.example === "linear-support") {
     return {
-      asset: generateFallbackAsset(input),
-      mode: "fallback",
-      warnings: [],
+      asset: generatedAssetSchema.parse(linearSupportAsset),
+      mode: "reference",
+      warnings: [
+        "Returning the authored Linear reference. The prompt did not generate or change its contents.",
+      ],
     };
+  }
+  if (!process.env.ASSET_GENERATOR_URL) {
+    throw new GenerationUnavailableError(
+      "New-company generation is not configured. Open the authored reference at /examples/linear-support, or connect an approved service with ASSET_GENERATOR_URL. No placeholder asset was published.",
+    );
   }
 
   try {
@@ -55,11 +75,12 @@ export async function generateAsset(input: AssetRequest): Promise<GenerationResu
       warnings: [],
     };
   } catch (error) {
-    const reason = error instanceof Error ? error.message : "Unknown agent-service failure";
-    return {
-      asset: generateFallbackAsset(input),
-      mode: "fallback",
-      warnings: [`Agent generation failed; deterministic fallback used. ${reason}`],
-    };
+    console.error(
+      "approved_generator_failed",
+      error instanceof Error ? error.name : "UnknownError",
+    );
+    throw new GenerationUnavailableError(
+      "The generation service could not produce a valid asset within its deadline. No placeholder was published; the authored reference remains available.",
+    );
   }
 }

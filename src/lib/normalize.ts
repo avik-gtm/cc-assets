@@ -2,7 +2,10 @@ import { assetRequestSchema, type AssetRequest } from "@/lib/schemas";
 
 type UnknownRecord = Record<string, unknown>;
 
-function firstString(record: UnknownRecord, keys: string[]): string | undefined {
+function firstString(
+  record: UnknownRecord,
+  keys: string[],
+): string | undefined {
   for (const key of keys) {
     const value = record[key];
     if (typeof value === "string" && value.trim()) return value.trim();
@@ -35,7 +38,11 @@ function normalizeSourceUrls(value: unknown): string[] {
       : [];
 
   return [...new Set(candidates)]
-    .map((candidate) => (typeof candidate === "string" ? normalizeUrl(candidate.trim()) : undefined))
+    .map((candidate) =>
+      typeof candidate === "string"
+        ? normalizeUrl(candidate.trim())
+        : undefined,
+    )
     .filter((candidate): candidate is string => Boolean(candidate));
 }
 
@@ -50,19 +57,39 @@ export function normalizeAssetRequest(body: unknown): AssetRequest {
 
   const record = body as UnknownRecord;
   const companyDomain = normalizeDomain(
-    firstString(record, ["companyDomain", "company_domain", "domain", "company_url"]),
+    firstString(record, [
+      "companyDomain",
+      "company_domain",
+      "domain",
+      "company_url",
+    ]),
   );
 
   const normalized = {
-    prompt: firstString(record, ["prompt", "assetPrompt", "asset_prompt", "context"]),
+    example: record.example,
+    prompt: firstString(record, [
+      "prompt",
+      "assetPrompt",
+      "asset_prompt",
+      "context",
+    ]),
     productDescription: firstString(record, [
       "productDescription",
       "product_description",
       "product",
       "seller_brief",
     ]),
-    problemSolved: firstString(record, ["problemSolved", "problem_solved", "problem"]),
-    universe: firstString(record, ["universe", "universe_logic", "task_1", "task1"]),
+    problemSolved: firstString(record, [
+      "problemSolved",
+      "problem_solved",
+      "problem",
+    ]),
+    universe: firstString(record, [
+      "universe",
+      "universe_logic",
+      "task_1",
+      "task1",
+    ]),
     signal: firstString(record, ["signal", "signals", "task_2", "task2"]),
     verifiedEvidence: firstString(record, [
       "verifiedEvidence",
@@ -76,12 +103,24 @@ export function normalizeAssetRequest(body: unknown): AssetRequest {
       "scoring_logic",
     ]),
     score: firstString(record, ["score", "company_score"]),
-    scoreReasons: firstString(record, ["scoreReasons", "score_reasons", "scoring_reasons"]),
+    scoreReasons: firstString(record, [
+      "scoreReasons",
+      "score_reasons",
+      "scoring_reasons",
+    ]),
     icp: firstString(record, ["icp", "target_buyer", "persona"]),
-    companyName: firstString(record, ["companyName", "company_name", "company"]),
+    companyName: firstString(record, [
+      "companyName",
+      "company_name",
+      "company",
+    ]),
     companyDomain,
     companyLinkedInUrl: normalizeUrl(
-      firstString(record, ["companyLinkedInUrl", "company_linkedin_url", "company_linkedin"]),
+      firstString(record, [
+        "companyLinkedInUrl",
+        "company_linkedin_url",
+        "company_linkedin",
+      ]),
     ),
     recipientName: firstString(record, [
       "recipientName",
@@ -105,12 +144,26 @@ export function normalizeAssetRequest(body: unknown): AssetRequest {
       "task3",
     ]),
     personLinkedInUrl: normalizeUrl(
-      firstString(record, ["personLinkedInUrl", "person_linkedin_url", "person_linkedin"]),
+      firstString(record, [
+        "personLinkedInUrl",
+        "person_linkedin_url",
+        "person_linkedin",
+      ]),
     ),
-    sourceUrls: normalizeSourceUrls(record.sourceUrls ?? record.source_urls ?? record.sources),
-    giftPreference: firstString(record, ["giftPreference", "gift_preference", "hobby"]),
+    sourceUrls: normalizeSourceUrls(
+      record.sourceUrls ?? record.source_urls ?? record.sources,
+    ),
+    giftPreference: firstString(record, [
+      "giftPreference",
+      "gift_preference",
+      "hobby",
+    ]),
     giftSourceUrl: normalizeUrl(
-      firstString(record, ["giftSourceUrl", "gift_source_url", "hobby_source_url"]),
+      firstString(record, [
+        "giftSourceUrl",
+        "gift_source_url",
+        "hobby_source_url",
+      ]),
     ),
     giftClaimUrl: normalizeUrl(
       firstString(record, ["giftClaimUrl", "gift_claim_url", "gift_url"]),
@@ -120,6 +173,8 @@ export function normalizeAssetRequest(body: unknown): AssetRequest {
   return assetRequestSchema.parse(normalized);
 }
 
-export function normalizeDomainToUrl(domain: string | undefined): string | undefined {
+export function normalizeDomainToUrl(
+  domain: string | undefined,
+): string | undefined {
   return domain ? `https://${normalizeDomain(domain)}` : undefined;
 }

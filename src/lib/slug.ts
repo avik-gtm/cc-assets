@@ -17,8 +17,10 @@ export function createAssetSlug(
   idempotencyKey?: string | null,
   preparedFor?: string,
 ): string {
-  const company = input.companyName || input.companyDomain || preparedFor || "prospect";
-  const base = slugify(`${company}-${assetType.replace("_", "-")}`) || "prospect-asset";
+  const company =
+    input.companyName || input.companyDomain || preparedFor || "prospect";
+  const base =
+    slugify(`${company}-${assetType.replace("_", "-")}`) || "prospect-asset";
   const suffix = idempotencyKey
     ? createHash("sha256").update(idempotencyKey).digest("hex").slice(0, 8)
     : randomBytes(4).toString("hex");

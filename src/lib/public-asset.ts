@@ -1,0 +1,95 @@
+import type { AssetDocument } from "@/lib/schemas";
+
+export type PublicAsset = Omit<
+  AssetDocument,
+  | "task5Hook"
+  | "warnings"
+  | "generationMode"
+  | "companyLinkedInUrl"
+  | "personLinkedInUrl"
+>;
+
+// Keep operator handoff and research seeds off the page, download, and public JSON.
+// Call this on the server before passing any props into client components.
+export function toPublicAsset(asset: AssetDocument): PublicAsset {
+  const {
+    task5Hook,
+    warnings,
+    generationMode,
+    companyLinkedInUrl,
+    personLinkedInUrl,
+    ...publicAsset
+  } = asset;
+  void task5Hook;
+  void warnings;
+  void generationMode;
+  void companyLinkedInUrl;
+  void personLinkedInUrl;
+  return {
+    ...publicAsset,
+    gift:
+      asset.gift.status === "included" && asset.gift.claimUrl
+        ? {
+            status: "included",
+            title: asset.gift.title,
+            message: asset.gift.message,
+            claimUrl: asset.gift.claimUrl,
+          }
+        : { status: "omitted" },
+  };
+}
+
+export function assetToMarkdown(asset: PublicAsset): string {
+  const lines = [
+    `# ${asset.title}`,
+    "",
+    asset.subtitle,
+    "",
+    `Prepared for ${asset.preparedFor}`,
+    "",
+    asset.useNote || "",
+  ];
+  for (const section of asset.sections) {
+    lines.push("", `## ${section.title}`, "", section.summary || "");
+    for (const item of section.items) {
+      lines.push(
+        "",
+        `### ${item.title}`,
+        "",
+        item.usage || "",
+        item.value ? `Subject: ${item.value}` : "",
+        item.description,
+      );
+      if (item.cells)
+        item.cells.forEach((cell, index) =>
+          lines.push(`${section.columns?.[index] || "Detail"}: ${cell}`),
+        );
+      if (item.checks)
+        lines.push(...item.checks.map((check) => `- [ ] ${check}`));
+      if (item.sourceUrl) lines.push(`Source: ${item.sourceUrl}`);
+    }
+  }
+  lines.push(
+    "",
+    "## Before using this kit",
+    "",
+    ...asset.recommendedActions.map((action) => `- ${action}`),
+  );
+  lines.push(
+    "",
+    "## Sources",
+    "",
+    ...asset.sources.map(
+      (source) =>
+        `- ${source.label}: ${source.url}${source.checkedAt ? ` (checked ${source.checkedAt})` : ""}`,
+    ),
+  );
+  lines.push(
+    "",
+    asset.preparedBy ? `Prepared by ${asset.preparedBy}.` : "",
+    "Independent working draft; not an official company policy or endorsement.",
+  );
+  return lines
+    .filter((line, index, all) => line !== "" || all[index - 1] !== "")
+    .join("\n");
+}

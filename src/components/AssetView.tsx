@@ -1,128 +1,359 @@
-import type { AssetDocument, AssetSection } from "@/lib/schemas";
+import type { CSSProperties } from "react";
+import Image from "next/image";
+import type { AssetSection } from "@/lib/schemas";
+import type { PublicAsset } from "@/lib/public-asset";
+import { CopyButton, DownloadKit, PracticeChecklist } from "./AssetActions";
 
-function ClassBadge({ value }: { value?: "fact" | "inference" | "unknown" }) {
-  return value ? <span className={`class-badge ${value}`}>{value}</span> : null;
-}
-
-function AssetSectionView({ section }: { section: AssetSection }) {
-  return (
-    <section className="asset-section" id={section.id}>
-      <header className="section-header">
-        {section.eyebrow ? <p className="kicker">{section.eyebrow}</p> : null}
-        <h2>{section.title}</h2>
-        {section.summary ? <p>{section.summary}</p> : null}
-      </header>
-      <div className={`section-items layout-${section.layout}`}>
+function SectionContents({ section }: { section: AssetSection }) {
+  if (section.layout === "table" && section.columns)
+    return (
+      <div
+        className="table-scroll"
+        role="region"
+        aria-label={section.title}
+        tabIndex={0}
+      >
+        <table>
+          <thead>
+            <tr>
+              {section.columns.map((column) => (
+                <th scope="col" key={column}>
+                  {column}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {section.items.map((item) => (
+              <tr key={item.title}>
+                {(item.cells || [item.title, item.description]).map(
+                  (cell, index) =>
+                    index === 0 ? (
+                      <th scope="row" key={index}>
+                        {cell}
+                      </th>
+                    ) : (
+                      <td key={index}>{cell}</td>
+                    ),
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    );
+  if (section.layout === "replies")
+    return (
+      <div className="reply-list">
         {section.items.map((item, index) => (
-          <article className="section-item" key={`${section.id}-${index}`}>
-            <div className="item-topline">
-              {item.value ? <span className="item-value">{item.value}</span> : null}
-              <ClassBadge value={item.classification} />
+          <details className="reply-card" key={item.title} open={index === 0}>
+            <summary>
+              <span className="reply-number">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <span className="eyebrow small">Ready to adapt</span>
+                <h3>{item.title}</h3>
+              </div>
+              <span className="expand-icon" aria-hidden="true">
+                +
+              </span>
+            </summary>
+            <div className="reply-content">
+              {item.usage ? <p className="usage-note">{item.usage}</p> : null}
+              <div className="message-window">
+                <div className="message-bar">
+                  <span className="window-dots" aria-hidden="true">
+                    ● ● ●
+                  </span>
+                  <span>Response draft</span>
+                </div>
+                {item.value ? (
+                  <div className="message-subject">
+                    <span>Subject</span>
+                    {item.value}
+                  </div>
+                ) : null}
+                <div className="message-body">{item.description}</div>
+                <div className="message-actions">
+                  <CopyButton
+                    text={`${item.value ? `Subject: ${item.value}\n\n` : ""}${item.description}`}
+                  />
+                  {item.sourceUrl ? (
+                    <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+                      Read source ↗
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+              {item.checks?.length ? (
+                <details className="agent-checks">
+                  <summary>
+                    Before sending: {item.checks.length} checks{" "}
+                    <span aria-hidden="true">+</span>
+                  </summary>
+                  <ul>
+                    {item.checks.map((check) => (
+                      <li key={check}>{check}</li>
+                    ))}
+                  </ul>
+                </details>
+              ) : null}
             </div>
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
-            {item.badge ? <span className="subtle-badge">{item.badge}</span> : null}
-            {item.sourceUrl ? <a href={item.sourceUrl} rel="noreferrer" target="_blank">View source ↗</a> : null}
-          </article>
+          </details>
         ))}
       </div>
-    </section>
+    );
+  return (
+    <div className={`module-grid ${section.layout}`}>
+      {section.items.map((item, index) => (
+        <article className="module-card" key={item.title}>
+          <span className="eyebrow small">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <h3>{item.title}</h3>
+          <p>{item.description}</p>
+          {item.checks ? (
+            <PracticeChecklist items={item.checks} group={item.title} />
+          ) : null}
+          {item.sourceUrl ? (
+            <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+              Source ↗
+            </a>
+          ) : null}
+        </article>
+      ))}
+    </div>
   );
 }
 
-export function AssetView({ asset }: { asset: AssetDocument }) {
+export function AssetView({ asset }: { asset: PublicAsset }) {
+  const replies = asset.sections.find(
+    (section) => section.layout === "replies",
+  );
+  const checklist = asset.sections.find(
+    (section) => section.layout === "checklist",
+  );
+  const style = {
+    "--accent": asset.brandColor,
+    "--hero-bg": asset.brandBackground || "#171713",
+    "--brand-surface": asset.brandSurface || "#f4f1e9",
+  } as CSSProperties;
   return (
-    <main className="asset-page" style={{ "--asset-accent": asset.brandColor } as React.CSSProperties}>
+    <main className="asset-page" style={style}>
+      <a className="skip-link" href="#asset-content">
+        Skip to the kit
+      </a>
+      <nav className="asset-nav" aria-label="Asset navigation">
+        <div className="nav-inner">
+          <div className="recipient-brand">
+            <span className="eyebrow small">Prepared for</span>
+            {asset.logoUrl ? (
+              <Image
+                src={asset.logoUrl}
+                alt={asset.preparedFor}
+                width={112}
+                height={30}
+                unoptimized
+              />
+            ) : (
+              <strong>{asset.preparedFor}</strong>
+            )}
+          </div>
+          <div className="nav-links">
+            {asset.sections.slice(0, 3).map((section) => (
+              <a href={`#${section.id}`} key={section.id}>
+                {section.layout === "replies"
+                  ? "The drafts"
+                  : section.layout === "table"
+                    ? "Escalations"
+                    : section.layout === "checklist"
+                      ? "First week"
+                      : section.eyebrow || "Details"}
+              </a>
+            ))}
+            <a href="#sources">Sources</a>
+          </div>
+          <a className="nav-download" href="#take-the-kit">
+            Take the kit <span aria-hidden="true">↗</span>
+          </a>
+        </div>
+      </nav>
       <header className="asset-hero">
-        <nav className="asset-nav page-shell">
-          <a className="wordmark light" href="/">EnrichFlow<span>.</span></a>
-          <span>{asset.assetType.replace("_", " ")}</span>
-        </nav>
-        <div className="page-shell asset-hero-content">
-          <div>
-            <p className="kicker light-kicker">Prepared for {asset.preparedFor}</p>
+        <div className="page-shell hero-grid">
+          <div className="hero-main">
+            <p className="eyebrow hero-eyebrow">
+              <span className="accent-dot" />
+              {asset.documentLabel || "Prepared for your team"}
+            </p>
             <h1>{asset.title}</h1>
             <p className="asset-subtitle">{asset.subtitle}</p>
+            <a className="hero-button" href={`#${asset.sections[0].id}`}>
+              Open the kit <span aria-hidden="true">↓</span>
+            </a>
+            <p className="hero-credit">
+              {asset.preparedBy || "Independently prepared"}
+              <span> • </span>For {asset.recipientTitle || asset.preparedFor}
+            </p>
           </div>
-          <div className="recipient-card">
-            <p className="mono-label">PREPARED AROUND</p>
-            <strong>{asset.recipientName || asset.recipientTitle || "The relevant owner"}</strong>
-            {asset.recipientName && asset.recipientTitle ? <span>{asset.recipientTitle}</span> : null}
-            <span>{new Date(asset.generatedAt).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
-          </div>
+          <aside className="kit-cover" aria-label="Kit contents">
+            <div className="cover-topline">
+              <span>Working edition / 01</span>
+              <span aria-hidden="true">↗</span>
+            </div>
+            <div className="cover-company">{asset.preparedFor}</div>
+            <h2>
+              Less blank page.
+              <br />
+              More useful work.
+            </h2>
+            <div className="cover-list">
+              <div>
+                <span>
+                  {String(
+                    replies?.items.length || asset.sections.length,
+                  ).padStart(2, "0")}
+                </span>
+                <p>
+                  {replies ? "Product-specific drafts" : "Practical modules"}
+                </p>
+              </div>
+              <div>
+                <span>01</span>
+                <p>Clear handoff template</p>
+              </div>
+              <div>
+                <span>
+                  {String(
+                    checklist?.items.length || asset.sources.length,
+                  ).padStart(2, "0")}
+                </span>
+                <p>
+                  {checklist ? "Days of guided practice" : "Supporting sources"}
+                </p>
+              </div>
+            </div>
+            <div className="cover-footer">
+              <span className="mini-line" />A starting point. Yours to adapt.
+            </div>
+          </aside>
         </div>
       </header>
-
-      <div className="page-shell asset-body">
-        <section className="executive-block">
+      <div className="page-shell" id="asset-content">
+        <div className="editorial-intro">
+          <span className="eyebrow">Made for the work</span>
+          <p>{asset.executiveSummary}</p>
+        </div>
+        {asset.sections.map((section, index) => (
+          <details
+            className="chapter"
+            key={section.id}
+            id={section.id}
+            open={section.defaultOpen ?? index === 0}
+          >
+            <summary>
+              <span className="chapter-number">
+                {String(index + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <span className="eyebrow small">
+                  {section.eyebrow || "In the kit"}
+                </span>
+                <h2>{section.title}</h2>
+                <p>{section.summary}</p>
+              </div>
+              <span className="expand-icon" aria-hidden="true">
+                +
+              </span>
+            </summary>
+            <div className="chapter-content">
+              <SectionContents section={section} />
+            </div>
+          </details>
+        ))}
+        <section className="take-kit" id="take-the-kit">
           <div>
-            <p className="kicker">Executive readout</p>
-            <p className="executive-copy">{asset.executiveSummary}</p>
-          </div>
-          <aside className="insight-card">
-            <span className="insight-mark">↗</span>
-            <p className="mono-label">NON-OBVIOUS INSIGHT</p>
-            <p>{asset.nonObviousInsight}</p>
-          </aside>
-        </section>
-
-        <section className="evidence-strip" aria-labelledby="evidence-title">
-          <div className="section-header">
-            <p className="kicker">Evidence ledger</p>
-            <h2 id="evidence-title">What we know—and what we do not.</h2>
-          </div>
-          <div className="evidence-grid">
-            {asset.evidence.map((item, index) => (
-              <article key={`${item.label}-${index}`}>
-                <div className="item-topline"><span>{item.value}</span><ClassBadge value={item.classification} /></div>
-                <h3>{item.label}</h3>
-                <p>{item.detail}</p>
-                {item.sourceUrl ? <a href={item.sourceUrl} rel="noreferrer" target="_blank">Evidence ↗</a> : null}
-              </article>
-            ))}
-          </div>
-        </section>
-
-        {asset.sections.map((section) => <AssetSectionView key={section.id} section={section} />)}
-
-        <section className="action-section">
-          <div>
-            <p className="kicker light-kicker">Recommended next moves</p>
-            <h2>Turn the signal into a useful decision.</h2>
+            <p className="eyebrow">Keep the useful part</p>
+            <h2>Make it your team’s.</h2>
+            <p>
+              Download an editable Markdown copy. Review it together, adapt the
+              details, and keep the sources attached.
+            </p>
+            <DownloadKit slug={asset.slug} />
           </div>
           <ol>
             {asset.recommendedActions.map((action, index) => (
-              <li key={action}><span>{String(index + 1).padStart(2, "0")}</span>{action}</li>
+              <li key={action}>
+                <span>0{index + 1}</span>
+                {action}
+              </li>
             ))}
           </ol>
         </section>
-
-        {asset.gift.status !== "omitted" ? (
+        <details className="chapter source-chapter" id="sources">
+          <summary>
+            <span className="chapter-number">↳</span>
+            <div>
+              <span className="eyebrow small">The work behind the work</span>
+              <h2>Sources, scope, and assumptions.</h2>
+              <p>
+                Check the product guidance. Separate it from our proposed
+                operating process.
+              </p>
+            </div>
+            <span className="expand-icon" aria-hidden="true">
+              +
+            </span>
+          </summary>
+          <div className="chapter-content">
+            <p className="scope-note">
+              {asset.useNote ||
+                "Review this working draft against current product guidance and your internal policies before use."}
+            </p>
+            <div className="source-list">
+              {asset.sources.map((source, index) => (
+                <article key={source.url}>
+                  <span className="eyebrow small">0{index + 1}</span>
+                  <div>
+                    <a href={source.url} target="_blank" rel="noreferrer">
+                      {source.label} ↗
+                    </a>
+                    <p>{source.note}</p>
+                  </div>
+                  {source.checkedAt ? (
+                    <time dateTime={source.checkedAt}>
+                      Checked {source.checkedAt}
+                    </time>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+            <div className="editor-note">
+              <span className="eyebrow small">A useful distinction</span>
+              <p>{asset.nonObviousInsight}</p>
+            </div>
+          </div>
+        </details>
+        {asset.gift.status === "included" && asset.gift.claimUrl ? (
           <section className="gift-section">
-            <p className="kicker">A thoughtful extra</p>
+            <p className="eyebrow">A small thank you</p>
             <h2>{asset.gift.title}</h2>
             <p>{asset.gift.message}</p>
-            {asset.gift.sourceUrl ? <a href={asset.gift.sourceUrl} rel="noreferrer" target="_blank">Why this was selected ↗</a> : null}
-            {asset.gift.claimUrl ? <a className="button" href={asset.gift.claimUrl} rel="noreferrer" target="_blank">Claim gift</a> : null}
+            <a
+              className="button"
+              href={asset.gift.claimUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              View gift ↗
+            </a>
           </section>
         ) : null}
-
-        <section className="sources-section">
-          <div>
-            <p className="kicker">Sources and handoff</p>
-            <h2>Built to support the conversation.</h2>
-            <p className="task-five-hook">{asset.task5Hook}</p>
-          </div>
-          <div>
-            {asset.sources.length ? (
-              <ol>{asset.sources.map((source) => <li key={source.url}><a href={source.url} rel="noreferrer" target="_blank">{source.label} ↗</a></li>)}</ol>
-            ) : <p>No external source URLs were supplied.</p>}
-          </div>
-        </section>
-
         <footer className="asset-footer">
-          <span>Prepared with EnrichFlow</span>
-          <span>Facts, inferences, and unknowns are intentionally separated.</span>
+          <span>{asset.preparedBy || "Independently prepared"}</span>
+          <span>
+            Not an official {asset.preparedFor} publication or endorsement.
+          </span>
         </footer>
       </div>
     </main>

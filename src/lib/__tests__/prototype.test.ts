@@ -1,0 +1,265 @@
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { NextRequest } from "next/server";
+import { linearSupportAsset } from "@/lib/examples/linear-support";
+import { assetToMarkdown, toPublicAsset } from "@/lib/public-asset";
+import { assetRequestSchema, generatedAssetSchema } from "@/lib/schemas";
+import {
+  generateAsset,
+  GenerationUnavailableError,
+} from "@/lib/generation/generator";
+import { createPersonalizedAsset } from "@/lib/orchestrator";
+import { getAsset, saveAsset } from "@/lib/storage";
+import { AssetView } from "@/components/AssetView";
+import { POST } from "@/app/api/assets/route";
+import { GET } from "@/app/api/assets/[slug]/route";
+import { GET as download } from "@/app/api/assets/[slug]/download/route";
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  vi.unstubAllGlobals();
+});
+
+describe("recipient-first support reference", () => {
+  it("validates a complete asset with three sourced replies and five practice days", () => {
+    expect(generatedAssetSchema.safeParse(linearSupportAsset).success).toBe(
+      true,
+    );
+    const replies = linearSupportAsset.sections[0].items;
+    expect(replies).toHaveLength(3);
+    for (const reply of replies) {
+      expect(reply.description).toContain("Hi [first name]");
+      expect(
+        linearSupportAsset.sources.some(
+          (source) => source.url === reply.sourceUrl,
+        ),
+      ).toBe(true);
+    }
+    expect(linearSupportAsset.sections[2].items).toHaveLength(5);
+  });
+
+  it("removes operator handoff, warnings and research seeds from public data", () => {
+    const data = toPublicAsset({
+      ...linearSupportAsset,
+      personLinkedInUrl: "https://linkedin.com/in/private-seed",
+      warnings: ["PRIVATE_WARNING"],
+      task5Hook: "PRIVATE_OUTREACH",
+      generationMode: "agent",
+    });
+    expect(JSON.stringify(data)).not.toMatch(
+      /PRIVATE_|private-seed|task5Hook|generationMode|warnings/,
+    );
+    expect(data.gift).toEqual({ status: "omitted" });
+  });
+
+  it("renders work before sources without qualification language or sender pitch", () => {
+    const html = renderToStaticMarkup(
+      createElement(AssetView, { asset: toPublicAsset(linearSupportAsset) }),
+    );
+    expect(html).toContain("linear-wordmark-dark.svg");
+    expect(html.indexOf("The invitation that never arrived")).toBeLessThan(
+      html.indexOf("Sources, scope, and assumptions"),
+    );
+    expect(html).not.toMatch(
+      /Qualification context|Priority score|Task 5|matched the supplied universe|PRIVATE_/,
+    );
+    expect(html).toContain("Not an official");
+  });
+
+  it("exports the actual content, ownership matrix and sources without private fields", () => {
+    const markdown = assetToMarkdown(toPublicAsset(linearSupportAsset));
+    expect(markdown).toContain("notifications@linear.app");
+    expect(markdown).toContain("Proposed next owner:");
+    expect(markdown).toContain(
+      "- [ ] Read the three linked documentation pages.",
+    );
+    expect(markdown).toContain("https://linear.app/docs/triage");
+    expect(markdown).not.toContain(linearSupportAsset.task5Hook);
+  });
+
+  it("does not expose suggested gifts as issued gifts", () => {
+    const asset = toPublicAsset({
+      ...linearSupportAsset,
+      gift: {
+        status: "suggested",
+        preference: "coffee",
+        sourceUrl: "https://example.com/hobby",
+      },
+    });
+    expect(asset.gift).toEqual({ status: "omitted" });
+  });
+
+  it("rejects script URLs and malformed table rows", () => {
+    expect(
+      generatedAssetSchema.safeParse({
+        ...linearSupportAsset,
+        logoUrl: "javascript:alert(1)",
+      }).success,
+    ).toBe(false);
+    expect(
+      generatedAssetSchema.safeParse({
+        ...linearSupportAsset,
+        sources: [{ label: "bad", url: "javascript:alert(1)" }],
+      }).success,
+    ).toBe(false);
+    expect(
+      generatedAssetSchema.safeParse({
+        ...linearSupportAsset,
+        sections: [
+          { ...linearSupportAsset.sections[1], columns: ["Only one"] },
+          linearSupportAsset.sections[0],
+        ],
+      }).success,
+    ).toBe(false);
+  });
+});
+
+describe("honest generation modes", () => {
+  it("requires an explicit reference request and makes no model calls", async () => {
+    const fetcher = vi.fn();
+    vi.stubGlobal("fetch", fetcher);
+    const result = await generateAsset(
+      assetRequestSchema.parse({
+        example: "linear-support",
+        prompt: "Make this about a different company",
+      }),
+    );
+    expect(result.mode).toBe("reference");
+    expect(result.asset.preparedFor).toBe("Linear");
+    expect(result.warnings.join(" ")).toContain("did not generate");
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("does not pretend a plain prompt was generated without a service", async () => {
+    vi.stubEnv("ASSET_GENERATOR_URL", "");
+    await expect(
+      generateAsset(
+        assetRequestSchema.parse({ prompt: "Build for a new support company" }),
+      ),
+    ).rejects.toBeInstanceOf(GenerationUnavailableError);
+  });
+
+  it("passes the actual schema to an approved service and parses the result", async () => {
+    vi.stubEnv("ASSET_GENERATOR_URL", "https://generator.example.test");
+    const fetcher = vi
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify(linearSupportAsset)));
+    vi.stubGlobal("fetch", fetcher);
+    const result = await generateAsset(
+      assetRequestSchema.parse({ prompt: "Build the support kit" }),
+    );
+    expect(result.mode).toBe("agent");
+    expect(
+      JSON.parse(fetcher.mock.calls[0][1].body).outputSchema.properties
+        .sections,
+    ).toBeDefined();
+  });
+
+  it("does not silently publish fallback copy after a service failure", async () => {
+    vi.stubEnv("ASSET_GENERATOR_URL", "https://generator.example.test");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue(new Response("unavailable", { status: 500 })),
+    );
+    await expect(
+      generateAsset(
+        assetRequestSchema.parse({ prompt: "Build the support kit" }),
+      ),
+    ).rejects.toThrow("No placeholder was published");
+  });
+
+  it("serves the same durable bundled reference without Blob or process memory", async () => {
+    const result = await createPersonalizedAsset(
+      assetRequestSchema.parse({ example: "linear-support" }),
+    );
+    expect(result.storage).toBe("bundled");
+    expect(await getAsset(result.asset.slug)).toEqual(linearSupportAsset);
+  });
+
+  it("blocks ephemeral production publication when durable storage is absent", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    vi.stubEnv("BLOB_STORE_ID", "");
+    await expect(
+      saveAsset({ ...linearSupportAsset, slug: "test-only" }),
+    ).rejects.toThrow("Durable asset storage");
+  });
+
+  it("never persists the original private handoff in the public storage record", async () => {
+    vi.stubEnv("VERCEL", "");
+    vi.stubEnv("BLOB_READ_WRITE_TOKEN", "");
+    vi.stubEnv("BLOB_STORE_ID", "");
+    await saveAsset({
+      ...linearSupportAsset,
+      slug: "privacy-test",
+      task5Hook: "PRIVATE_PITCH",
+      warnings: ["PRIVATE_WARNING"],
+    });
+    const stored = await getAsset("privacy-test");
+    expect(JSON.stringify(stored)).not.toMatch(/PRIVATE_PITCH|PRIVATE_WARNING/);
+  });
+});
+
+describe("API boundaries", () => {
+  it("downloads an editable recipient-only document with an attachment header", async () => {
+    const response = await download(new Request("http://localhost/test"), {
+      params: Promise.resolve({ slug: linearSupportAsset.slug }),
+    });
+    expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Disposition")).toContain(
+      "attachment;",
+    );
+    const text = await response.text();
+    expect(text).toContain("## Three replies");
+    expect(text).not.toContain(linearSupportAsset.task5Hook);
+  });
+  it("returns a reference URL and public JSON without the private hook", async () => {
+    vi.stubEnv("VERCEL", "");
+    vi.stubEnv("ASSET_API_KEY", "");
+    const response = await POST(
+      new NextRequest("http://localhost/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ example: "linear-support" }),
+      }),
+    );
+    const result = await response.json();
+    expect(response.status).toBe(200);
+    expect(result.generationMode).toBe("reference");
+    expect(result.storage).toBe("bundled");
+    const publicResponse = await GET(new NextRequest(result.assetUrl), {
+      params: Promise.resolve({ slug: result.slug }),
+    });
+    expect(JSON.stringify(await publicResponse.json())).not.toContain(
+      "task5Hook",
+    );
+  });
+
+  it("reports missing generation as 503, not success", async () => {
+    vi.stubEnv("VERCEL", "");
+    vi.stubEnv("ASSET_API_KEY", "");
+    vi.stubEnv("ASSET_GENERATOR_URL", "");
+    const response = await POST(
+      new NextRequest("http://localhost/api/assets", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain" },
+        body: "Create a new prospect asset",
+      }),
+    );
+    expect(response.status).toBe(503);
+    expect((await response.json()).success).toBe(false);
+  });
+
+  it("fails closed on an unconfigured hosted API", async () => {
+    vi.stubEnv("VERCEL", "1");
+    vi.stubEnv("ASSET_API_KEY", "");
+    const response = await POST(
+      new NextRequest("https://example.com/api/assets", {
+        method: "POST",
+        body: "test",
+      }),
+    );
+    expect(response.status).toBe(401);
+  });
+});

@@ -42,7 +42,10 @@ const promptLabels = [
   "Source URLs",
 ];
 
-function promptField(prompt: string | undefined, labels: string[]): string | undefined {
+function promptField(
+  prompt: string | undefined,
+  labels: string[],
+): string | undefined {
   if (!prompt) return undefined;
   const pattern = labels.map(escapeRegex).join("|");
   const nextLabelPattern = promptLabels.map(escapeRegex).join("|");
@@ -67,7 +70,9 @@ function companyFromDomain(domain: string | undefined): string | undefined {
 
 function extractDomain(value: string | undefined): string | undefined {
   if (!value) return undefined;
-  const match = value.match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)/i);
+  const match = value.match(
+    /(?:https?:\/\/)?(?:www\.)?([a-z0-9-]+(?:\.[a-z0-9-]+)+)/i,
+  );
   return match?.[1]?.toLowerCase();
 }
 
@@ -78,32 +83,58 @@ function extractUrl(value: string | undefined): string | undefined {
 }
 
 function extractUrls(value: string | undefined): string[] {
-  return value?.match(/https?:\/\/[^\s,]+/gi)?.map((url) => url.replace(/[.)]+$/, "")) || [];
+  return (
+    value
+      ?.match(/https?:\/\/[^\s,]+/gi)
+      ?.map((url) => url.replace(/[.)]+$/, "")) || []
+  );
 }
 
 function inferAssetType(text: string): AssetType {
-  if (/competitor|alternative|versus|compare|comparison|stack/i.test(text)) return "comparison";
-  if (/partner|ecosystem|account map|stakeholder|territor|prospect list/i.test(text)) return "map";
-  if (/compliance|accessibility|risk|audit|gap|readiness|security/i.test(text)) return "audit";
-  if (/hiring|capacity|growth|support|operations|market analysis|report/i.test(text)) return "report";
+  if (/competitor|alternative|versus|compare|comparison|stack/i.test(text))
+    return "comparison";
+  if (
+    /partner|ecosystem|account map|stakeholder|territor|prospect list/i.test(
+      text,
+    )
+  )
+    return "map";
+  if (/compliance|accessibility|risk|audit|gap|readiness|security/i.test(text))
+    return "audit";
+  if (
+    /hiring|capacity|growth|support|operations|market analysis|report/i.test(
+      text,
+    )
+  )
+    return "report";
   return "action_plan";
 }
 
 function inferTopic(text: string): string {
-  if (/customer support|support operations|customer experience|escalation|knowledge/i.test(text)) {
+  if (
+    /customer support|support operations|customer experience|escalation|knowledge/i.test(
+      text,
+    )
+  ) {
     return "Customer Support Growth";
   }
-  if (/accessibility|wcag|digital access/i.test(text)) return "Accessibility Readiness";
+  if (/accessibility|wcag|digital access/i.test(text))
+    return "Accessibility Readiness";
   if (/compliance|soc 2|iso 27001|hipaa|gdpr|security monitoring/i.test(text)) {
     return "Enterprise Compliance";
   }
-  if (/partner|ecosystem|alliances|channel/i.test(text)) return "Partner Ecosystem";
+  if (/partner|ecosystem|alliances|channel/i.test(text))
+    return "Partner Ecosystem";
   if (/recruit|hiring|talent|ats/i.test(text)) return "Hiring Capacity";
   if (/competitor|competitive/i.test(text)) return "Competitive Position";
   return "Opportunity";
 }
 
-function titleFor(company: string, topic: string, assetType: AssetType): string {
+function titleFor(
+  company: string,
+  topic: string,
+  assetType: AssetType,
+): string {
   switch (assetType) {
     case "audit":
       return `${company} ${topic} Audit`;
@@ -139,19 +170,25 @@ function decisionLens(topic: string) {
     ];
   }
 
-  if (topic === "Enterprise Compliance" || topic === "Accessibility Readiness") {
+  if (
+    topic === "Enterprise Compliance" ||
+    topic === "Accessibility Readiness"
+  ) {
     return [
       {
         title: "Current exposure",
-        description: "Separate verified obligations and visible gaps from assumptions that still require validation.",
+        description:
+          "Separate verified obligations and visible gaps from assumptions that still require validation.",
       },
       {
         title: "Change pressure",
-        description: "Identify which expansion, customer, hiring, or regulatory event increases the cost of waiting.",
+        description:
+          "Identify which expansion, customer, hiring, or regulatory event increases the cost of waiting.",
       },
       {
         title: "Practical remediation",
-        description: "Prioritize the smallest set of actions that improves readiness without creating a broad transformation project.",
+        description:
+          "Prioritize the smallest set of actions that improves readiness without creating a broad transformation project.",
       },
     ];
   }
@@ -159,15 +196,18 @@ function decisionLens(topic: string) {
   return [
     {
       title: "Verified current state",
-      description: "Anchor the decision in supplied company evidence rather than broad industry assumptions.",
+      description:
+        "Anchor the decision in supplied company evidence rather than broad industry assumptions.",
     },
     {
       title: "What changed",
-      description: "Connect the strongest current signal to the operational outcome the selected buyer owns.",
+      description:
+        "Connect the strongest current signal to the operational outcome the selected buyer owns.",
     },
     {
       title: "Useful next decision",
-      description: "Turn the evidence into a concrete action or question the recipient can use immediately.",
+      description:
+        "Turn the evidence into a concrete action or question the recipient can use immediately.",
     },
   ];
 }
@@ -178,36 +218,67 @@ const sensitiveGiftPattern =
 export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
   const prompt = input.prompt;
   const product =
-    input.productDescription || promptField(prompt, ["Product", "Product description"]) || "the seller's product";
+    input.productDescription ||
+    promptField(prompt, ["Product", "Product description"]) ||
+    "the seller's product";
   const problem =
-    input.problemSolved || promptField(prompt, ["Problem solved", "Problem"]) || "the operational problem described in the brief";
+    input.problemSolved ||
+    promptField(prompt, ["Problem solved", "Problem"]) ||
+    "the operational problem described in the brief";
   const universe =
-    input.universe || promptField(prompt, ["Universe", "Task 1", "Universe and why this company qualified"]);
+    input.universe ||
+    promptField(prompt, [
+      "Universe",
+      "Task 1",
+      "Universe and why this company qualified",
+    ]);
   const signal = input.signal || promptField(prompt, ["Signal", "Task 2"]);
   const verifiedEvidence =
-    input.verifiedEvidence || promptField(prompt, ["Verified evidence", "Evidence"]);
+    input.verifiedEvidence ||
+    promptField(prompt, ["Verified evidence", "Evidence"]);
   const signalLogic =
-    input.signalLogic || promptField(prompt, ["Signal logic or hypothesis", "Signal logic", "Hypothesis"]);
+    input.signalLogic ||
+    promptField(prompt, [
+      "Signal logic or hypothesis",
+      "Signal logic",
+      "Hypothesis",
+    ]);
   const score = input.score || promptField(prompt, ["Score"]);
   const scoreReasons =
-    input.scoreReasons || promptField(prompt, ["Score reasons", "Scoring reasons"]);
-  const icp = input.icp || promptField(prompt, ["ICP", "Selected buyer", "Buyer"]);
-  const domain = input.companyDomain || extractDomain(promptField(prompt, ["Company domain", "Domain"]));
+    input.scoreReasons ||
+    promptField(prompt, ["Score reasons", "Scoring reasons"]);
+  const icp =
+    input.icp || promptField(prompt, ["ICP", "Selected buyer", "Buyer"]);
+  const domain =
+    input.companyDomain ||
+    extractDomain(promptField(prompt, ["Company domain", "Domain"]));
   const companyLinkedInUrl =
-    input.companyLinkedInUrl || extractUrl(promptField(prompt, ["Company LinkedIn"]));
+    input.companyLinkedInUrl ||
+    extractUrl(promptField(prompt, ["Company LinkedIn"]));
   const personLinkedInUrl =
-    input.personLinkedInUrl || extractUrl(promptField(prompt, ["Person LinkedIn"]));
+    input.personLinkedInUrl ||
+    extractUrl(promptField(prompt, ["Person LinkedIn"]));
   const company =
     input.companyName ||
     promptField(prompt, ["Prospect company", "Company"]) ||
     companyFromDomain(domain) ||
     "Prospect";
-  const recipientName = input.recipientName || promptField(prompt, ["Recipient", "Person"]);
+  const recipientName =
+    input.recipientName || promptField(prompt, ["Recipient", "Person"]);
   const recipientTitle = input.recipientTitle || icp;
   const recipientReason =
-    input.recipientReason || promptField(prompt, ["Why this buyer owns the problem", "Buyer reason"]);
+    input.recipientReason ||
+    promptField(prompt, ["Why this buyer owns the problem", "Buyer reason"]);
 
-  const fullText = [product, problem, universe, signal, signalLogic, icp, prompt]
+  const fullText = [
+    product,
+    problem,
+    universe,
+    signal,
+    signalLogic,
+    icp,
+    prompt,
+  ]
     .filter(Boolean)
     .join(" ");
   const assetType = inferAssetType(fullText);
@@ -264,7 +335,8 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
     evidence.push({
       label: "Priority score",
       value: score || "Scored",
-      detail: scoreReasons || "A score was supplied without its component reasons.",
+      detail:
+        scoreReasons || "A score was supplied without its component reasons.",
       classification: "inference",
     });
   }
@@ -272,16 +344,20 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
     evidence.push({
       label: "Available context",
       value: "Requires validation",
-      detail: "The request did not include claim-level evidence, so this brief stays intentionally directional.",
+      detail:
+        "The request did not include claim-level evidence, so this brief stays intentionally directional.",
       classification: "unknown",
     });
   }
 
-  const giftPreference = input.giftPreference || promptField(prompt, ["Gift preference", "Hobby"]);
+  const giftPreference =
+    input.giftPreference || promptField(prompt, ["Gift preference", "Hobby"]);
   const giftSourceUrl =
     input.giftSourceUrl || extractUrl(promptField(prompt, ["Gift source URL"]));
   const giftIsSafe = Boolean(
-    giftPreference && giftSourceUrl && !sensitiveGiftPattern.test(giftPreference),
+    giftPreference &&
+    giftSourceUrl &&
+    !sensitiveGiftPattern.test(giftPreference),
   );
 
   const sourceObjects = uniqueSources.map((url, index) => ({
@@ -292,9 +368,12 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
   const warnings = [
     "Generated with the deterministic fallback; connect an approved agent service for deeper research and writing.",
   ];
-  if (!verifiedEvidence) warnings.push("No separately labeled verified evidence was supplied.");
+  if (!verifiedEvidence)
+    warnings.push("No separately labeled verified evidence was supplied.");
   if (personLinkedInUrl) {
-    warnings.push("The supplied LinkedIn URL was retained as a research seed, not treated as verified evidence.");
+    warnings.push(
+      "The supplied LinkedIn URL was retained as a research seed, not treated as verified evidence.",
+    );
   }
 
   return {
@@ -316,7 +395,8 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
         id: "why-now",
         eyebrow: "Signal to decision",
         title: "Why this deserves attention now",
-        summary: "The signal is useful only when its implication is separated from what remains unverified.",
+        summary:
+          "The signal is useful only when its implication is separated from what remains unverified.",
         layout: "cards",
         items: [
           {
@@ -330,7 +410,8 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
             title: "Interpretation",
             value: "Working hypothesis",
             description:
-              signalLogic || "The operational implication must be validated with the selected buyer.",
+              signalLogic ||
+              "The operational implication must be validated with the selected buyer.",
             classification: "inference",
           },
           {
@@ -347,7 +428,8 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
         id: "decision-lens",
         eyebrow: "Useful framework",
         title: `A practical ${topic.toLowerCase()} decision lens`,
-        summary: "Three areas worth checking before turning the signal into a larger initiative.",
+        summary:
+          "Three areas worth checking before turning the signal into a larger initiative.",
         layout: "steps",
         items: decisionLens(topic).map((item, index) => ({
           ...item,
@@ -359,7 +441,8 @@ export function generateFallbackAsset(input: AssetRequest): GeneratedAsset {
         id: "product-fit",
         eyebrow: "Connection to the product",
         title: "Where the product could become relevant",
-        summary: "Product relevance should follow the evidence rather than lead it.",
+        summary:
+          "Product relevance should follow the evidence rather than lead it.",
         layout: "narrative",
         items: [
           {
