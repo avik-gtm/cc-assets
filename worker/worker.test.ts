@@ -7,15 +7,15 @@ import { claudeArguments, claudeEnvironment, parseClaudeResult, runCommand, Writ
 import { createWriterServer } from "./server";
 
 const token = "test-only-writer-token-not-a-real-secret";
-const input = assetRequestSchema.parse({ prompt: JSON.stringify(linearSupportAsset) });
+const input = assetRequestSchema.parse({ prompt: JSON.stringify(linearSupportAsset), companySummary: "Linear provides software for product development teams." });
 const closures: Array<() => Promise<void>> = [];
 afterEach(async () => {
   vi.unstubAllEnvs();
   await Promise.all(closures.splice(0).map((close) => close()));
 });
 
-async function service(generate = vi.fn(async (_input: unknown, _signal: AbortSignal): Promise<GeneratedAsset> => linearSupportAsset)) {
-  const writer = createWriterServer({ token, generate });
+async function service(generate = vi.fn(async (_input: unknown, _signal: AbortSignal): Promise<GeneratedAsset> => linearSupportAsset), maxConcurrent: number | null = 1) {
+  const writer = createWriterServer({ token, generate, ...(maxConcurrent === null ? {} : { maxConcurrent }) });
   closures.push(writer.close);
   await new Promise<void>((resolve) => writer.server.listen(0, "127.0.0.1", resolve));
   const address = writer.server.address();
@@ -41,7 +41,7 @@ describe("separate writer HTTP contract (stub content, not real generation)", ()
   it("reports readiness without claiming to have generated anything", async () => {
     const app = await service();
     const health = await fetch(`${app.url}/health`, { headers: { Authorization: `Bearer ${token}` } });
-    expect(await health.json()).toEqual({ ok: true, mode: "claude_cli", researchMode: "supplied_context_only", active: 0 });
+    expect(await health.json()).toEqual({ ok: true, mode: "claude_cli", researchMode: "supplied_context_only", active: 0, capacity: 1 });
     expect(app.generate).not.toHaveBeenCalled();
   });
   it.each([
@@ -87,6 +87,46 @@ describe("separate writer HTTP contract (stub content, not real generation)", ()
     expect(second.headers.get("Retry-After")).toBe("3");
     finish(linearSupportAsset);
     expect((await first).status).toBe(200);
+  });
+  it.each([0, -1, 1.5, 11, Number.NaN, Infinity])("rejects invalid concurrency %s", maxConcurrent => {
+    expect(() => createWriterServer({ token, maxConcurrent, generate: vi.fn() })).toThrow("Concurrency");
+  });
+  it("handles ten in parallel by default, isolates results, rejects eleven and releases slots", async () => {
+    const releases = new Map<string, (asset: GeneratedAsset) => void>();
+    const app = await service(vi.fn(async (value) => {
+      const id = assetRequestSchema.parse(value).prompt!;
+      return new Promise<GeneratedAsset>(resolve => releases.set(id, resolve));
+    }), null);
+    const calls = Array.from({ length: 10 }, (_, n) => app.post(JSON.stringify({ input: { prompt: `request-${n}` } })));
+    await vi.waitFor(() => expect(releases.size).toBe(10));
+    const health = await fetch(`${app.url}/health`, { headers: { Authorization: `Bearer ${token}` } });
+    expect(await health.json()).toMatchObject({ active: 10, capacity: 10 });
+    const overflow = await app.post(JSON.stringify({ input }));
+    expect(overflow.status).toBe(429);
+    expect(overflow.headers.get("Retry-After")).toBe("3");
+    for (const [id, release] of releases) release({ ...linearSupportAsset, title: id });
+    const responses = await Promise.all(calls);
+    expect(responses.map(response => response.status)).toEqual(Array(10).fill(200));
+    expect(await Promise.all(responses.map(async response => (await response.json()).title)))
+      .toEqual(Array.from({ length: 10 }, (_, n) => `request-${n}`));
+    const next = app.post(JSON.stringify({ input: { prompt: "next" } }));
+    await vi.waitFor(() => expect(releases.has("next")).toBe(true));
+    releases.get("next")!(linearSupportAsset);
+    expect((await next).status).toBe(200);
+  });
+  it("a failed request releases its slot without breaking other active requests", async () => {
+    let release!: (asset: GeneratedAsset) => void;
+    const app = await service(vi.fn(async value => {
+      if (assetRequestSchema.parse(value).prompt === "fail") throw new WriterError("generation_failed");
+      return new Promise<GeneratedAsset>(resolve => { release = resolve; });
+    }), 2);
+    const slow = app.post(JSON.stringify({ input }));
+    await vi.waitFor(() => expect(release).toBeDefined());
+    expect((await app.post(JSON.stringify({ input: { prompt: "fail" } }))).status).toBe(502);
+    const health = await fetch(`${app.url}/health`, { headers: { Authorization: `Bearer ${token}` } });
+    expect(await health.json()).toMatchObject({ active: 1, capacity: 2 });
+    release(linearSupportAsset);
+    expect((await slow).status).toBe(200);
   });
   it("cancels work when its HTTP client disconnects", async () => {
     let began!: () => void;

@@ -13,6 +13,8 @@ const envelopeSchema = z.object({
   outputSchema: z.unknown().optional(),
 }).strict();
 
+export const MAX_CONCURRENT_ASSETS = 10;
+
 function send(response: ServerResponse, status: number, value: unknown) {
   if (response.destroyed || response.writableEnded) return;
   response.writeHead(status, {
@@ -65,8 +67,8 @@ export function createWriterServer(options: {
   generate: (input: AssetRequest, signal: AbortSignal) => Promise<GeneratedAsset | ResearchedGeneration>;
 }) {
   if (options.token.trim().length < 32) throw new Error("A private service token of at least 32 characters is required.");
-  const limit = options.maxConcurrent ?? 1;
-  if (!Number.isInteger(limit) || limit < 1 || limit > 3) throw new Error("Concurrency must be 1–3.");
+  const limit = options.maxConcurrent ?? MAX_CONCURRENT_ASSETS;
+  if (!Number.isInteger(limit) || limit < 1 || limit > MAX_CONCURRENT_ASSETS) throw new Error("Concurrency must be 1–10.");
   const expected = createHash("sha256").update(`Bearer ${options.token}`).digest();
   const controllers = new Set<AbortController>();
   const pending = new Set<Promise<void>>();
@@ -76,7 +78,7 @@ export function createWriterServer(options: {
     if (!timingSafeEqual(expected, supplied)) { send(response, 401, { error: "unauthorized" }); request.resume(); return; }
     if (request.method === "GET" && request.url === "/health") {
       // This is process readiness, not a model request or a latency assertion.
-      send(response, 200, { ok: accepting, mode: options.mode ?? "claude_cli", researchMode: options.mode === "codex_cli" ? "parallel_public_research" : "supplied_context_only", active: controllers.size }); return;
+      send(response, 200, { ok: accepting, mode: options.mode ?? "claude_cli", researchMode: options.mode === "codex_cli" ? "parallel_public_research" : "supplied_context_only", active: controllers.size, capacity: limit }); return;
     }
     if (request.method !== "POST" || request.url !== "/generate") { send(response, 404, { error: "not_found" }); request.resume(); return; }
     if (!accepting) { send(response, 503, { error: "shutting_down" }); request.resume(); return; }

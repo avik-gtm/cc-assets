@@ -53,7 +53,7 @@ Private environment settings:
 | `ASSET_CODEX_MODEL` | Defaults to `gpt-6.1-sol`; all research and writing calls request Fast mode with low reasoning. |
 | `ASSET_WORKER_HOST` | `127.0.0.1`; keep the raw Node port private. |
 | `ASSET_WORKER_PORT` | Defaults to `8791`. |
-| `ASSET_WORKER_CONCURRENCY` | One asset request by default, range 1–3. Each Codex request has three parallel research branches. Excess requests receive 429, not a hidden queue. |
+| `ASSET_WORKER_CONCURRENCY` | Ten simultaneous asset requests by default, configurable from 1–10. Each Codex request has three parallel research branches (up to 30 concurrent research subprocesses at full load), followed by its writer. Excess requests receive worker HTTP 429, not a hidden queue. Provider limits and Mac resources still affect completion time. |
 
 For the existing Mac installation, rebuilding does not restart the running process. After an intentional worker update:
 

@@ -2,6 +2,20 @@ import { describe, expect, it } from "vitest";
 import { normalizeAssetRequest } from "@/lib/normalize";
 
 describe("normalizeAssetRequest", () => {
+  it.each(["companySummary", "company_summary", "recipientCompanySummary", "prospect_company_summary"])("preserves recipient context via %s separately from seller and signals", key => {
+    const result = normalizeAssetRequest({
+      productDescription: "Our customer support software",
+      [key]: "  The prospect sells inventory software to retailers.  ",
+      signal: "Three support openings found on its careers page.",
+    });
+    expect(result.companySummary).toBe("The prospect sells inventory software to retailers.");
+    expect(result.productDescription).toBe("Our customer support software");
+    expect(result.signal).toBe("Three support openings found on its careers page.");
+  });
+  it("bounds company summaries and permits omitted context", () => {
+    expect(() => normalizeAssetRequest({ companySummary: "x".repeat(15_001) })).toThrow();
+    expect(normalizeAssetRequest({ prompt: "Create a brief" }).companySummary).toBeUndefined();
+  });
   it("accepts a raw prompt", () => {
     expect(
       normalizeAssetRequest("Company: Acme\nSignal: Active hiring").prompt,

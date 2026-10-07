@@ -114,6 +114,9 @@ export function normalizeAssetRequest(body: unknown): AssetRequest {
       "company_name",
       "company",
     ]),
+    companySummary: firstString(record, [
+      "companySummary", "company_summary", "recipientCompanySummary", "prospect_company_summary",
+    ]),
     companyDomain,
     companyLinkedInUrl: normalizeUrl(
       firstString(record, [

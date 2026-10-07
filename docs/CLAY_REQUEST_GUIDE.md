@@ -2,6 +2,8 @@
 
 ## What you provide
 
+`companySummary` is an optional string (up to 15,000 characters) describing the **recipient company**: what it sells, who its customers are, and relevant workflows. Map your company-summary column here, not into the seller's `productDescription`. It is used alongside signals in Current situation and to tailor the problem, solution and alternatives. Supplied context does not independently prove hiring, growth, performance or internal pain. Aliases: `company_summary`, `recipientCompanySummary`, `prospect_company_summary`.
+
 Recommended structured fields (all text unless noted): `productDescription`, `companyName`, `companyDomain`, `recipientName`, `recipientTitle`, `universe`, `icp`, `signal`, `verifiedEvidence`, `signalLogic`, and `prompt` for specific instructions or what you can demonstrate. `sourceUrls` is an array of HTTPS URLs. Optional `personLinkedInUrl` and `companyLinkedInUrl` are research seeds, not proof. Optional `logoUrl` is an HTTPS image URL; otherwise the worker discovers a published company logo or site icon from `companyDomain`. Optional `ctaUrl` is your actual booking/demo URL. Omit unavailable fields rather than inventing values.
 
 All new reports address the recipient directly as “you” and “your team.” Code defaults to `gpt-6.1-sol` with Fast requested and low reasoning, but a live test showed the current CLI's ChatGPT login rejects that model. The local worker therefore retains its previous `gpt-5.6-luna` override until access is resolved. The signed-in Codex worker is the runtime, not a desktop Dot.
@@ -104,6 +106,6 @@ Failures have the same three keys: `success: false`, `assetUrl: null`, and elaps
 
 **Current setup:** Vercel is connected to the separate signed-in Codex worker through a temporary Cloudflare quick tunnel. The Mac must stay awake/online and the tunnel running. A Dot is not configured and does not sit in the timed path. The research budget is 20 seconds shared across three parallel branches, followed by a 30-second writing deadline; these are limits, not proof of a successful 30–60-second run. Measure real requests and inspect their content. Do not count a fast error or authored reference as success.
 
-A `401` means the caller key is missing/wrong, not that JSON is wrong. A `503` means generation could not finish; the API publishes no generic fallback. Start with one row: the worker accepts one asset request at a time by default. See [worker setup](../worker/README.md) for the temporary endpoint's availability limits.
+A `401` means the caller key is missing/wrong, not that JSON is wrong. A `503` means generation could not finish, including exhausted worker capacity; the API publishes no generic fallback. You can send **10 simultaneous per-prospect requests**. Do not send an array: each request keeps its existing body and three-field response. Extra requests are rejected rather than queued. See [worker setup](../worker/README.md) for resource and temporary endpoint availability limits.
 
 `cc.getattn.io` is live and verified for DNS/HTTPS, health, and both examples. Use it as the primary Clay hostname. See [custom-domain details](CUSTOM_DOMAIN_SETUP.md). Generation quality and timing still require inspection of real output, not only a healthy website.

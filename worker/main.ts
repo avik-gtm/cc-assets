@@ -2,7 +2,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { claudeEnvironment, checkClaude, writeWithClaude, WriterError } from "./claude";
-import { createWriterServer } from "./server";
+import { createWriterServer, MAX_CONCURRENT_ASSETS } from "./server";
 import { codexEnvironment, checkCodex, writeWithCodex } from "./codex";
 
 async function main() {
@@ -22,7 +22,7 @@ async function main() {
     if (!Number.isInteger(port) || port < 1024 || port > 65535) throw new Error("Invalid port");
     const writer = createWriterServer({
       token: process.env.ASSET_GENERATOR_TOKEN || "",
-      maxConcurrent: Number(process.env.ASSET_WORKER_CONCURRENCY || "1"),
+      maxConcurrent: Number(process.env.ASSET_WORKER_CONCURRENCY || MAX_CONCURRENT_ASSETS),
       mode: useCodex ? "codex_cli" : "claude_cli",
       generate: (input, signal) => useCodex ? writeWithCodex(input, { ...options, signal, model: process.env.ASSET_CODEX_MODEL }) : writeWithClaude(input, { ...options, signal }),
     });

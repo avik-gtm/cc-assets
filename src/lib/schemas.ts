@@ -35,6 +35,7 @@ export const assetRequestSchema = z
     scoreReasons: z.string().trim().max(10_000).optional(),
     icp: z.string().trim().max(5_000).optional(),
     companyName: z.string().trim().max(500).optional(),
+    companySummary: z.string().trim().max(15_000).optional(),
     companyDomain: z.string().trim().max(1_000).optional(),
     logoUrl: optionalUrl,
     companyLinkedInUrl: optionalUrl,
@@ -61,7 +62,7 @@ export const assetRequestSchema = z
         value.universe ||
         value.signal ||
         value.companyDomain ||
-        value.companyName,
+        value.companyName || value.companySummary,
     );
 
     if (!hasPrompt && !hasStructuredContext && !value.example) {

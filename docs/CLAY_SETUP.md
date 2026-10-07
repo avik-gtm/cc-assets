@@ -52,7 +52,7 @@ The response contains exactly `success`, `assetUrl`, and `executionTimeMs`. Map 
 
 The worker launches three parallel research branches and a writer. It may proceed using supplied context when public research is unavailable, and it never treats inaccessible LinkedIn pages or an inferred pain as a verified finding. Supplying good existing evidence makes the result stronger and reduces dependence on fresh research.
 
-A `401` means the caller key is missing or wrong. A `503` means the generation service could not complete the request; no generic placeholder is published. Test one row before a batch; the worker accepts one asset job at a time by default.
+A `401` means the caller key is missing or wrong. A `503` means generation could not complete, including when capacity is exhausted; no generic placeholder is published. The worker now accepts up to **10 simultaneous asset requests**. Send at most 10 at once; excess requests are rejected, not queued. Keep the same per-row request and three-field response. Concurrent latency depends on model limits, the Mac, and network availability.
 
 ## Custom domain
 

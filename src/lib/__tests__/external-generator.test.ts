@@ -5,6 +5,7 @@ import { linearSupportAsset } from "@/lib/examples/linear-support";
 
 const input = assetRequestSchema.parse({
   prompt: JSON.stringify(linearSupportAsset),
+  companySummary: "Linear provides software for product development teams.",
 });
 
 afterEach(() => {
