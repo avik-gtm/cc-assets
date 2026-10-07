@@ -17,7 +17,7 @@ Each brief adapts to the seller's capabilities, prospect, buyer, and supplied ev
 
 The generator uses supplied branding or discovers a logo from the company's public website, with a published site icon as a fallback. If no suitable image is found, the company name remains visible. Discovery does not claim a verified brand kit.
 
-A separate Codex worker performs bounded parallel research and writing using GPT-6.1 Sol with Fast mode requested and low reasoning effort. Vercel hosts the website and finished assets; there is no AI Gateway dependency. Speed is measured per run, not guaranteed.
+A separate Codex worker performs bounded parallel research and writing. The requested target is GPT-6.1 Sol with Fast mode and low reasoning effort. Live testing found that the installed CLI rejects that model with its current ChatGPT-account login, so the working local service remains on its previous GPT-5.6 Luna model until access is resolved. Vercel hosts the website and finished assets; there is no AI Gateway dependency. Speed is measured per run, not guaranteed.
 
 Current operational limitation: the worker runs on a signed-in Mac through a temporary tunnel. It is a controlled-test setup, not an always-on hosted backend.
 

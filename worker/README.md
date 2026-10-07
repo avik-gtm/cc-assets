@@ -4,6 +4,8 @@ The website hosts the finished assets. This worker runs **outside Vercel**, usin
 
 ## Current setup — October 7, 2026
 
+The requested GPT-6.1 Sol / Fast configuration is implemented but NOT operational in this CLI login. A real smoke test returned: “The 'gpt-6.1-sol' model is not supported when using Codex with a ChatGPT account.” The local environment override was restored to the previously working GPT-5.6 Luna so the endpoint remains usable. Do not label it GPT-6.1 Sol until a genuine request succeeds on that model.
+
 - The worker runs on the current Mac as `gui/501/io.enrichflow.personalized-assets.worker`, bound to `127.0.0.1:8791`.
 - Vercel forwards to a privately configured generator address. Exact endpoint and authentication details are omitted from this README.
 - This is a **temporary Cloudflare quick tunnel for testing**, not production uptime. The Mac must remain awake, logged in, and online, and the tunnel process must remain running. Restarting a quick tunnel changes its hostname; update the private Vercel endpoint and redeploy if that happens.
