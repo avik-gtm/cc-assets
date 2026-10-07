@@ -1,6 +1,6 @@
 import { list, put } from "@vercel/blob";
 import { assetDocumentSchema, type AssetDocument } from "@/lib/schemas";
-import { linearSupportAsset } from "@/lib/examples/linear-support";
+import { getReferenceAssetBySlug } from "@/lib/examples/references";
 import { toPublicAsset } from "@/lib/public-asset";
 
 type GlobalWithAssetStore = typeof globalThis & {
@@ -51,7 +51,8 @@ export async function saveAsset(
 }
 
 export async function getAsset(slug: string): Promise<AssetDocument | null> {
-  if (slug === linearSupportAsset.slug) return linearSupportAsset;
+  const reference = getReferenceAssetBySlug(slug);
+  if (reference) return reference;
   const memoryAsset = memoryStore().get(slug);
   if (memoryAsset) return memoryAsset;
 

@@ -4,7 +4,7 @@ import {
   type GeneratedAsset,
 } from "@/lib/schemas";
 import { z } from "zod";
-import { linearSupportAsset } from "@/lib/examples/linear-support";
+import { getReferenceAsset } from "@/lib/examples/references";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
 import { CONTEXT_ONLY_RULES } from "./context-rules";
 import { validateGeneratedAsset } from "./contract";
@@ -101,12 +101,12 @@ async function callApprovedAgentService(
 export async function generateAsset(
   input: AssetRequest,
 ): Promise<GenerationResult> {
-  if (input.example === "linear-support") {
+  if (input.example) {
     return {
-      asset: generatedAssetSchema.parse(linearSupportAsset),
+      asset: generatedAssetSchema.parse(getReferenceAsset(input.example)),
       mode: "reference",
       warnings: [
-        "Returning the authored Linear reference. The prompt did not generate or change its contents.",
+        "Returning the selected authored reference. The prompt did not generate or change its contents.",
       ],
     };
   }

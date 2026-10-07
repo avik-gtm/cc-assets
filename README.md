@@ -26,6 +26,8 @@ The original `enrichflow-gtm-audit` repository uses a Claude worker configured f
 Run `npm install`, then `npm run dev`.
 
 - `/examples/linear-support`: authored Linear reference.
+- `/examples/lifecore-wellness`: authored LifeCore wellness coverage plan for fictional Northstar Software.
+- `/a/lifecore-northstar-wellness`: same LifeCore reference through the public asset URL contract, with JSON and Markdown download endpoints.
 - `/a/linear-support-onboarding`: same reference through the asset URL contract.
 - `/api/assets/linear-support-onboarding/download`: complete editable Markdown.
 - `/`: operator input guide and JSON-body builder; not an unauthenticated generation form.
@@ -33,6 +35,10 @@ Run `npm install`, then `npm run dev`.
 Linear now demonstrates this exact structure using public product documentation. Its former training-kit content was replaced after the user explicitly requested the six-part brief. The presentation uses a branded cover, readable text, compact contents, expandable chapters, interactive checks, and editable download. All four brief body sections open by default. The final CTA offers a walkthrough; no gift is promised because none was approved. The example is authored, and SupportLoop is a fictional practice seller.
 
 The visual reference is the newer `avik-gtm/enrichflow-gtm-audit`, not `enrichflow-gtm-playbook`. Branding is recipient-specific. The layout supports tables, cards, steps, checklists, and reusable templates for different industries; it does not force every company into the Linear support content.
+
+The LifeCore example uses the user's corporate-wellness brief: gyms, studios, pools, and classes through one membership. Northstar Software, its office/remote setup, its existing gym arrangement, and its green visual treatment are fictional. It contains a practical coverage check, opt-in pilot checklist, alternatives comparison, and walkthrough CTA—not an outbound/GTM plan for LifeCore. No employee reviews, public company findings, clinical outcomes, network coverage, or comparable-company success story are invented. Linear remains unchanged.
+
+For API reference testing, explicitly send `{"example":"lifecore-wellness"}`. This selects the authored example; it does not generate or modify it. `examples/requests/lifecore-prompt.json` shows a normal prompt request for later generation. The user plans to run generation on Grok bot later; no Grok connection is implemented or required for these examples.
 
 ## Input
 

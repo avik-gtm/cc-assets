@@ -6,6 +6,7 @@ import {
 import { generateAsset } from "@/lib/generation/generator";
 import { createAssetSlug } from "@/lib/slug";
 import { saveAsset } from "@/lib/storage";
+import { getReferenceAsset } from "@/lib/examples/references";
 
 export type CreateAssetResult = {
   asset: AssetDocument;
@@ -19,9 +20,8 @@ export async function createPersonalizedAsset(
 ): Promise<CreateAssetResult> {
   const generation = await generateAsset(input);
   if (generation.mode === "reference") {
-    const { linearSupportAsset } =
-      await import("@/lib/examples/linear-support");
-    return { asset: linearSupportAsset, storage: "bundled" };
+    if (!input.example) throw new Error("A reference must be explicitly selected.");
+    return { asset: getReferenceAsset(input.example), storage: "bundled" };
   }
   const slug = createAssetSlug(
     input,

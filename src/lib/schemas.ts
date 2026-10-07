@@ -24,7 +24,7 @@ const logoUrlSchema = z.union([
 export const assetRequestSchema = z
   .object({
     prompt: z.string().trim().max(50_000).optional(),
-    example: z.literal("linear-support").optional(),
+    example: z.enum(["linear-support", "lifecore-wellness"]).optional(),
     productDescription: z.string().trim().max(10_000).optional(),
     problemSolved: z.string().trim().max(10_000).optional(),
     universe: z.string().trim().max(10_000).optional(),

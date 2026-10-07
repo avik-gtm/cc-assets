@@ -27,6 +27,20 @@ export default function HomePage() {
           View document ↗
         </a>
       </section>
+      <section className="studio-preview">
+        <div>
+          <p className="eyebrow">Authored example · fictional prospect</p>
+          <h2>LifeCore: a wellness coverage plan</h2>
+          <p>
+            A prospect-facing plan for People &amp; Benefits leadership: check
+            useful access, compare options, and design an opt-in pilot. Same
+            six-part format, different buyer problem and content.
+          </p>
+        </div>
+        <a className="button" href="/examples/lifecore-wellness">
+          View LifeCore example ↗
+        </a>
+      </section>
       <section className="input-guide" aria-labelledby="input-title">
         <h2 id="input-title">What to pass</h2>
         <p>For a useful result, put these five things in one prompt:</p>
@@ -78,7 +92,7 @@ export default function HomePage() {
           used or required.
         </p>
         <p>
-          The Linear example works independently of the generator. New-company
+          The authored examples work independently of the generator. New-company
           generation still needs a verified connection to the separate service;
           the two-minute target has not yet been measured successfully.
         </p>
