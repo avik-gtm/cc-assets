@@ -1,0 +1,14 @@
+Product: SupportLoop helps software companies coordinate customer-support QA, escalation, knowledge and workforce operations.
+Problem solved: keeping support quality and workflows consistent as the customer base and team grow.
+Prospect company: Acme
+Company domain: acme.com
+Universe: US B2B software companies with 500-2,000 employees and at least one active customer-support opening.
+Signal: eight active sales openings and four active customer-support openings.
+Verified evidence: the careers page lists eight sales roles and four customer-support roles.
+Signal logic or hypothesis: increasing sales capacity may lead to additional customers and greater support complexity. This is a hypothesis, not proof that the current operation is failing.
+Score: 84/100.
+Selected buyer: Jane Smith, VP Customer Support.
+Why this buyer owns the problem: she owns support operations, quality, escalation and knowledge outcomes.
+Person LinkedIn: https://linkedin.com/in/example
+Source URLs: https://acme.com/careers
+Create a useful personalized asset without claiming that Acme is understaffed or that its support operation is broken.
