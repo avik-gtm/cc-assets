@@ -9,6 +9,7 @@ import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt
 import { CONTEXT_ONLY_RULES } from "./context-rules";
 import { validateGeneratedAsset } from "./contract";
 import { researchedGenerationSchema } from "./research-envelope";
+import { generatorConfigured, resolveGeneratorEndpoint } from "./endpoint";
 
 export type GenerationResult = {
   asset: GeneratedAsset;
@@ -35,8 +36,7 @@ export class GenerationUnavailableError extends Error {
 async function callApprovedAgentService(
   input: AssetRequest,
 ): Promise<{ asset: GeneratedAsset; research?: { sourceCount: number; completed: number } }> {
-  const endpoint = process.env.ASSET_GENERATOR_URL;
-  if (!endpoint) throw new Error("ASSET_GENERATOR_URL is not configured.");
+  const endpoint = await resolveGeneratorEndpoint();
   const url = new URL(endpoint);
   const localDevelopment =
     !process.env.VERCEL &&
@@ -119,7 +119,7 @@ export async function generateAsset(
       ],
     };
   }
-  if (!process.env.ASSET_GENERATOR_URL) {
+  if (!generatorConfigured()) {
     throw new GenerationUnavailableError(
       "The separate content generator is not connected yet. The website and authored reference remain available. No placeholder asset was published.",
       "generation_not_configured",
