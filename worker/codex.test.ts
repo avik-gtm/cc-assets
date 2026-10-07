@@ -101,6 +101,8 @@ describe("public research source verification", () => {
 describe("parallel bounded research + single writing call", () => {
   it("starts three scoped research branches then one writer, retaining supplied evidence if research is empty", async () => {
     let active = 0; let peak = 0; let researchCalls = 0; let writerCalls = 0;
+    let release!: () => void;
+    const allStarted = new Promise<void>(resolve => { release = resolve; });
     vi.mocked(runCommand).mockImplementation(async (args, prompt, options) => {
       expect(options.env).not.toHaveProperty("ASSET_GENERATOR_TOKEN");
       const schema = JSON.parse(await readFile(args[args.indexOf("--output-schema") + 1], "utf8"));
@@ -108,7 +110,8 @@ describe("parallel bounded research + single writing call", () => {
       if (args.includes('web_search="live"')) {
         active++; peak = Math.max(peak, active); researchCalls++;
         expect(prompt).toContain("narrowly scoped");
-        await new Promise((resolve) => setTimeout(resolve, 5));
+        if (researchCalls === 3) release();
+        await allStarted;
         active--;
         return { code: 0, stdout: stream({ sources: [] }) };
       }
