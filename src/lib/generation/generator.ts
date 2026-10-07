@@ -7,6 +7,7 @@ import { z } from "zod";
 import { linearSupportAsset } from "@/lib/examples/linear-support";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
 import { CONTEXT_ONLY_RULES } from "./context-rules";
+import { validateGeneratedAsset } from "./contract";
 
 export type GenerationResult = {
   asset: GeneratedAsset;
@@ -91,36 +92,10 @@ async function callApprovedAgentService(
     await reader.cancel();
     reader.releaseLock();
   }
-  const asset = generatedAssetSchema.parse(
+  return validateGeneratedAsset(
     JSON.parse(Buffer.concat(chunks).toString("utf8")),
+    input,
   );
-  const supplied = JSON.stringify(input);
-  const references = [
-    ...asset.sources.map((source) => source.url),
-    ...asset.evidence.map((item) => item.sourceUrl),
-    ...asset.sections.flatMap((section) =>
-      section.items.map((item) => item.sourceUrl),
-    ),
-    asset.logoUrl,
-    asset.gift.claimUrl,
-    asset.callToAction?.url,
-  ].filter((url): url is string => Boolean(url));
-  if (references.some((url) => !supplied.includes(url))) {
-    throw new Error("Generator returned an unsupplied reference URL.");
-  }
-  if (
-    asset.documentFormat !== "six_part_brief" ||
-    asset.sections.map((section) => section.id).join(",") !==
-      "current-situation,likely-problem,solution,alternatives" ||
-    !asset.callToAction
-  ) {
-    throw new Error(
-      "Generator did not return the requested six-part structure.",
-    );
-  }
-  // A model cannot authorize a gift. Only the caller's explicit approved field
-  // can populate the public offer; this does not buy or issue anything.
-  return { ...asset, approvedGiftOffer: input.approvedGiftOffer };
 }
 
 export async function generateAsset(

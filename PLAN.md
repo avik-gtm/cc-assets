@@ -15,7 +15,7 @@ Latest user direction: the current Linear reference and generator contract now u
 
 Vercel hosts the pages, forwarding API, and Blob documents only. AI Gateway code, dependency, setup warnings, and active setup instructions have been removed. The external generator adapter is implemented, but its live endpoint is not connected. No generated AccessProof artifact exists yet. Do not add model billing back to Vercel.
 
-The next milestone is not more templates. It is to reproduce this quality for a previously unseen company from one short prompt.
+The next milestone is not more templates. It is to reproduce this quality for a previously unseen company from one short prompt. The separate restricted Claude service now exists under `worker/`; transport/process tests do not substitute for that live result. Its read-only preflight currently reports `claude_not_signed_in` on this machine.
 
 - Verify the separate Claude runtime and connect a restricted writer, then complete a real request. The external-service adapter accepts `systemPrompt`, `input`, and `outputSchema`. The original worker is configured for the OpenClaw Mac; a reachability check timed out. Preserve the original pipeline and queue.
 - Extract seller, recipient, buyer, and source material without confusing their roles.

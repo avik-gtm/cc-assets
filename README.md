@@ -46,6 +46,8 @@ The current contract is **supplied-context only**: the separate writer must not 
 
 This adapter is implemented and contract-tested; that is **not** proof of a live connected generator. No new-company output or sub-120-second end-to-end run has been verified. Do not copy the original GTM worker's broad shell/tool permissions into a public endpoint. Deployment of a new worker requires an identified runtime and secure authentication.
 
+The matching [separate Claude writer](worker/README.md) is now implemented in this repository. It runs outside Vercel, uses the checked-in six-part contract, disables model tools/customizations, and enforces bounded authenticated requests. Run `npm run worker:build` and `npm run worker:check` on the intended machine before deployment. The current machine returns `claude_not_signed_in`; no live writer connection has been installed. This is implementation progress, not a successful model-generation run.
+
 ## Safety and storage
 
 - Hosted POSTs fail closed without `ASSET_API_KEY`.
