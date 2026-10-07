@@ -14,21 +14,22 @@ This explicitly returns the saved reference. It does not interpret a company pro
 
 The API accepts `{"prompt":"..."}` or a plain-text body. Structured company fields are optional. You do not need to manually construct the full asset schema.
 
-Suggested context:
+Five practical inputs in one prompt (you do not need to construct the output schema):
 
 ```text
-Product: [Seller and what the product helps its customers do]
-Company: [Recipient company]
-Domain: [Recipient domain]
-Buyer: [Selected person's role]
-Universe: [Why this company entered the list]
-Signal: [What you actually observed]
-Signal logic: [Your hypothesis, clearly separate from facts]
-Verified evidence: [Specific observations and source text]
-Source URLs: [Relevant pages]
-Create one useful asset for this recipient. Complete part of their work.
+Product: [Seller, what it does, and the problem it helps solve]
+Prospect: [Recipient company and domain if known]
+Buyer: [Selected person's role; name optional]
+Observed facts: [Signal, data, source text, and source URLs; identify unknowns]
+My reasoning: [Why this matters to the buyer; distinguish hypothesis from fact]
+Create one standalone working document this recipient can use.
+No email subject, greeting, sign-off, pitch, or meeting CTA in the document.
 Keep my scoring, qualification notes, and outreach draft private.
 ```
+
+Task 1 universe filters, scores, scoring logic, company/person LinkedIn URLs, a preferred asset type, or approved logo URL/colors are optional additions. The generator uses those to select the work, not to publish your qualification logic. A successful response supplies `assetUrl` for Task 4 and a separate `task5Hook` for Task 5.
+
+POST to `https://enrichflow-personalized-assets.vercel.app/api/assets` with `Content-Type: application/json` and `Authorization: Bearer [your private API key]`. Body: `{"prompt":"the context above"}`. Let your HTTP client serialize it—do not manually concatenate unescaped JSON. `/` offers a payload builder that copies valid JSON; it does not call the API or expose credentials.
 
 **Current limitation:** the direct AI Gateway writer is implemented and configured, but the Vercel team requires billing verification before model calls are allowed. The AccessProof run returned 503; no generated asset was published. The reference remains readable.
 

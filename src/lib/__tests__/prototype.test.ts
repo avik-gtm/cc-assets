@@ -12,6 +12,8 @@ import {
 import { createPersonalizedAsset } from "@/lib/orchestrator";
 import { getAsset, saveAsset } from "@/lib/storage";
 import { AssetView } from "@/components/AssetView";
+import { DemoForm } from "@/components/DemoForm";
+import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
 import { POST } from "@/app/api/assets/route";
 import { GET } from "@/app/api/assets/[slug]/route";
 import { GET as download } from "@/app/api/assets/[slug]/download/route";
@@ -22,17 +24,18 @@ afterEach(() => {
 });
 
 describe("recipient-first support reference", () => {
-  it("validates a complete asset with three sourced replies and five practice days", () => {
+  it("validates three sourced diagnostic playcards and five practice days without email copy", () => {
     expect(generatedAssetSchema.safeParse(linearSupportAsset).success).toBe(
       true,
     );
-    const replies = linearSupportAsset.sections[0].items;
-    expect(replies).toHaveLength(3);
-    for (const reply of replies) {
-      expect(reply.description).toContain("Hi [first name]");
+    const playcards = linearSupportAsset.sections[0].items;
+    expect(playcards).toHaveLength(3);
+    for (const card of playcards) {
+      expect(card.description).toContain("First check:");
+      expect(card.description).not.toMatch(/Hi \[first name\]|Subject:/);
       expect(
         linearSupportAsset.sources.some(
-          (source) => source.url === reply.sourceUrl,
+          (source) => source.url === card.sourceUrl,
         ),
       ).toBe(true);
     }
@@ -59,12 +62,17 @@ describe("recipient-first support reference", () => {
     );
     expect(html).toContain("linear-wordmark-dark.svg");
     expect(html.indexOf("The invitation that never arrived")).toBeLessThan(
-      html.indexOf("Sources, scope, and assumptions"),
+      html.indexOf("<h2>Sources &amp; assumptions"),
     );
     expect(html).not.toMatch(
       /Qualification context|Priority score|Task 5|matched the supplied universe|PRIVATE_/,
     );
     expect(html).toContain("Not an official");
+    expect(html).toContain("Document contents");
+    expect(html).toContain("Implementation notes");
+    expect(html).not.toMatch(
+      /Response draft|Subject<|Hi \[first name\]|Open the kit|Take the kit|Less blank page|Before sending|message-window/,
+    );
   });
 
   it("exports the actual content, ownership matrix and sources without private fields", () => {
@@ -76,6 +84,100 @@ describe("recipient-first support reference", () => {
     );
     expect(markdown).toContain("https://linear.app/docs/triage");
     expect(markdown).not.toContain(linearSupportAsset.task5Hook);
+    expect(markdown).not.toMatch(/Subject:|Hi \[first name\]/);
+  });
+
+  it.each([
+    "audit",
+    "map",
+    "report",
+    "comparison",
+    "action_plan",
+    "toolkit",
+  ] as const)(
+    "keeps the %s shell independent of the support example",
+    (assetType) => {
+      const asset = toPublicAsset({
+        ...linearSupportAsset,
+        assetType,
+        preparedFor: "Northstar Commerce",
+        logoUrl: undefined,
+        title: "Checkout testing plan",
+        subtitle: "Fictional practice document",
+        documentLabel: "Accessibility / Testing",
+        recipientTitle: "Digital Product",
+        preparedBy: "AccessProof concept",
+        useNote: "Proposed test plan, not a completed audit.",
+        executiveSummary: "Test checkout journeys before release.",
+        nonObviousInsight: "A redesign is not proof of defects.",
+        sources: [],
+        sections: [
+          {
+            id: "test-plan",
+            title: "Test plan",
+            layout: "table",
+            columns: ["Journey", "Check"],
+            items: [
+              {
+                title: "Checkout",
+                description: "Proposed test",
+                cells: ["Checkout", "Keyboard navigation"],
+              },
+            ],
+          },
+          {
+            id: "release",
+            title: "Release checklist",
+            layout: "checklist",
+            items: [
+              {
+                title: "Review",
+                description: "Proposed gate",
+                checks: ["Record test results"],
+              },
+            ],
+          },
+        ],
+        recommendedActions: ["Assign test owners."],
+      });
+      const html = renderToStaticMarkup(createElement(AssetView, { asset }));
+      expect(html).toContain("Checkout testing plan");
+      expect(html).toContain("Keyboard navigation");
+      expect(html).toContain("No verified source material supplied");
+      expect(html).not.toMatch(
+        /Linear|SupportLoop|First week|support kit|Response draft|Subject</,
+      );
+    },
+  );
+
+  it("keeps legacy layouts readable without turning values into email subjects", () => {
+    const asset = toPublicAsset({
+      ...linearSupportAsset,
+      sections: linearSupportAsset.sections.map((section) =>
+        section.id === "handoff"
+          ? {
+              ...section,
+              layout: "replies",
+              items: [{ ...section.items[0], value: "Case reference" }],
+            }
+          : section,
+      ),
+    });
+    const html = renderToStaticMarkup(createElement(AssetView, { asset }));
+    expect(html).toContain("Case reference");
+    expect(html).toContain("Copy template");
+    expect(html).not.toMatch(/Subject|Response draft|message-window/);
+    expect(assetToMarkdown(asset)).not.toContain("Subject:");
+  });
+
+  it("prepares a single prompt body without offering an unauthenticated generation action", () => {
+    const html = renderToStaticMarkup(createElement(DemoForm));
+    expect(html).toContain("Copy JSON body");
+    expect(html).toContain("&quot;prompt&quot;");
+    expect(html).toContain("does not call the generator");
+    expect(html).not.toMatch(/Generate from prompt|Test API with authored/);
+    expect(PERSONALIZED_ASSET_SYSTEM_PROMPT).toContain("NOT an email");
+    expect(PERSONALIZED_ASSET_SYSTEM_PROMPT).toContain("only in task5Hook");
   });
 
   it("does not expose suggested gifts as issued gifts", () => {
@@ -211,7 +313,7 @@ describe("API boundaries", () => {
       "attachment;",
     );
     const text = await response.text();
-    expect(text).toContain("## Three replies");
+    expect(text).toContain("## Diagnostic playcards");
     expect(text).not.toContain(linearSupportAsset.task5Hook);
   });
   it("returns a reference URL and public JSON without the private hook", async () => {

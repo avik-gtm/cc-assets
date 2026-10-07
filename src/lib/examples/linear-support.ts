@@ -11,9 +11,9 @@ export const linearSupportAsset = assetDocumentSchema.parse({
   generatedAt: "2026-10-07T16:00:00.000Z",
   generationMode: "reference",
   assetType: "toolkit",
-  title: "A first-week support kit. Built around Linear.",
+  title: "Support operations field guide",
   subtitle:
-    "Three customer replies, a clear escalation path, and five days of practice. Ready for your support lead to review and adapt.",
+    "Linear · diagnostic playcards, escalation ownership, and a five-day onboarding plan.",
   preparedFor: "Linear",
   recipientTitle: "Support leadership",
   companyDomain: "linear.app",
@@ -22,31 +22,30 @@ export const linearSupportAsset = assetDocumentSchema.parse({
   brandBackground: "#222326",
   brandSurface: "#F4F5F8",
   preparedBy: "SupportLoop · independent concept",
-  documentLabel: "Support enablement kit",
+  documentLabel: "Operations / Onboarding",
   useNote:
     "An independent working draft built from public documentation. Product steps are sourced; routing and training are proposals for your team to approve. No access to your tickets, internal procedures, or performance data.",
   executiveSummary:
-    "Give a new teammate something concrete to practice: one access request, one permissions question, and one issue-routing question. Each pairs a customer-facing draft with a check before sending.",
+    "Use the playcards to distinguish configuration questions from exceptions, the matrix to assign the next owner, and the handoff template to record a reproducible case. The practice plan ties each workflow to a reviewable output.",
   nonObviousInsight:
     "A missing invitation, limited project visibility, and an issue missing from a view can look like bugs. The first useful question is often about access or configuration, not engineering capacity.",
   evidence: [],
   sections: [
     {
-      id: "replies",
-      eyebrow: "Start with the work",
-      title: "Three replies your team can make their own.",
+      id: "playcards",
+      navigationLabel: "Diagnostic playcards",
+      title: "Diagnostic playcards",
       summary:
-        "Copy the customer-facing draft. Keep the internal checks with the agent. These are practice scenarios, not claims about your most common tickets.",
-      layout: "replies",
+        "A first check, an action path, and a boundary for each workflow. These are practice scenarios, not claims about ticket frequency or current performance.",
+      layout: "cards",
       defaultOpen: true,
       items: [
         {
           title: "The invitation that never arrived",
-          value: "Getting your teammate into Linear",
           usage:
             "Use when a customer says a teammate has not received an invitation.",
           description:
-            "Hi [first name],\n\nCould you confirm whether your workspace uses SCIM? If it does, your identity-provider administrator manages member and admin access; guest invitations are handled separately.\n\nOtherwise, ask an authorized workspace admin to check the address and pending invitation in Settings → Administration → Members. If delivery is being filtered, your email administrator can allow notifications@linear.app and pm_bounces@pm-bounces.linear.app.\n\nIf that does not resolve it, send the affected email address and approximate invite time through your approved support channel. Please do not send passwords or sign-in links.",
+            "First check: identify the provisioning method.\n\nSCIM workspace → have the identity-provider administrator check member/admin provisioning. Guest invitations are a separate path.\n\nNon-SCIM workspace → an authorized workspace admin checks the address and pending invitation in Settings → Administration → Members. If delivery is filtered, the email administrator can allow notifications@linear.app and pm_bounces@pm-bounces.linear.app.\n\nStill blocked → record the affected identity, approximate invite time, method, and redacted error in an approved support channel. Do not collect passwords or sign-in links.",
           checks: [
             "Confirm the requester is authorized before discussing workspace membership.",
             "Check the workspace's provisioning path before recommending another invitation.",
@@ -55,11 +54,10 @@ export const linearSupportAsset = assetDocumentSchema.parse({
         },
         {
           title: "The guest who cannot see the whole project",
-          value: "Checking project access for your guest",
           usage:
             "Use when a guest reports missing issues in a project spanning multiple teams.",
           description:
-            "Hi [first name],\n\nA guest can see the issues belonging to teams they have been added to. In a project that spans teams, they may see the project itself without seeing every team's issues.\n\nAsk the appropriate team owner to confirm the guest's team membership and intended access. Avoid changing their workspace role just to troubleshoot a visibility question.\n\nIf the issue belongs to a team the guest already has access to, share the issue link and a redacted screenshot through your approved support channel so we can investigate the specific mismatch.",
+            "First check: identify the team that owns the missing issue and the guest's team membership.\n\nGuest outside the issue's team → the limited visibility may be expected. A cross-team project can be visible without all of its teams' issues being visible. Ask the appropriate owner to confirm intended access.\n\nGuest already has access → capture the issue reference, expected access, and a redacted screenshot for product support.\n\nBoundary → do not broaden a workspace role merely to troubleshoot, or disclose private issue content to an unauthorized guest.",
           checks: [
             "Confirm which team owns the missing issue and whether the requester may access it.",
             "Do not reproduce private issue content in a reply to an unauthorized guest.",
@@ -68,11 +66,10 @@ export const linearSupportAsset = assetDocumentSchema.parse({
         },
         {
           title: "The issue that disappeared from a view",
-          value: "Finding an issue that is still in Triage",
           usage:
             "Use when a customer can find an issue in Triage but not in a normal view.",
           description:
-            "Hi [first name],\n\nIf the issue is still in Triage, that can explain why it is absent from your normal view. Triage issues are excluded from views by default.\n\nTo include them in a custom view, add Triage to its status filter. If the issue is ready to enter the team's workflow, the triage owner can review and accept it instead.\n\nIf it remains missing, share the issue link and the view's filter settings through your approved support channel. We can compare those before treating it as a product defect.",
+            "First check: compare the issue's current status with the view's active filters.\n\nIssue still in Triage → exclusion from a normal view can be expected. Triage issues are excluded from views by default. Add Triage to a custom view's status filter if that view should include them.\n\nIssue ready for the workflow → the triage owner reviews and accepts it. Do not change status solely to make a screenshot match.\n\nStill unexplained → record the issue and view references, filters, and steps to reproduce before treating it as a suspected defect.",
           checks: [
             "Confirm the issue's current status and the view filters.",
             "Do not change issue status simply to make a screenshot match.",
@@ -83,8 +80,9 @@ export const linearSupportAsset = assetDocumentSchema.parse({
     },
     {
       id: "routing",
+      navigationLabel: "Routing matrix",
       eyebrow: "A proposed operating rule",
-      title: "Resolve the question. Route the exception.",
+      title: "Escalation routing matrix",
       summary:
         "Suggested ownership for these scenarios, not a description of Linear's internal organization. Substitute your actual queues and response commitments.",
       layout: "table",
@@ -142,10 +140,11 @@ export const linearSupportAsset = assetDocumentSchema.parse({
     },
     {
       id: "first-week",
+      navigationLabel: "Five-day practice plan",
       eyebrow: "Practice, then calibrate",
-      title: "A first week with something to show for it.",
+      title: "Five-day onboarding plan",
       summary:
-        "A suggested training sequence. Run exercises in a safe test workspace or with fabricated tickets; review every reply before using it with a customer.",
+        "A proposed training sequence. Run exercises in a safe test workspace or with fabricated tickets; validate each procedure with the support lead before operational use.",
       layout: "checklist",
       items: [
         {
@@ -158,12 +157,12 @@ export const linearSupportAsset = assetDocumentSchema.parse({
           ],
         },
         {
-          title: "Day 2 · Write the first reply",
-          description: "Deliverable: three reviewed response drafts.",
+          title: "Day 2 · Diagnose the scenario",
+          description: "Deliverable: three reviewed diagnostic records.",
           checks: [
-            "Use each sample scenario to write a response without copying blindly.",
+            "For each playcard, record the first check, observed result, and next action.",
             "Have a reviewer check the steps against the linked source.",
-            "Remove any promise not supported by your team's policy.",
+            "Separate expected product behavior from an unexplained exception.",
           ],
         },
         {
@@ -187,9 +186,9 @@ export const linearSupportAsset = assetDocumentSchema.parse({
         },
         {
           title: "Day 5 · Publish the approved version",
-          description: "Deliverable: a small, owned response library.",
+          description: "Deliverable: a small, owned operating guide.",
           checks: [
-            "Assign an owner to each reply and routing rule.",
+            "Assign an owner to each playcard and routing rule.",
             "Record the review date and the documentation source.",
             "Agree when product or policy changes should trigger another review.",
           ],
@@ -198,15 +197,15 @@ export const linearSupportAsset = assetDocumentSchema.parse({
     },
     {
       id: "handoff",
+      navigationLabel: "Handoff template",
       eyebrow: "One reusable template",
-      title: "Give the next person enough to act.",
+      title: "Escalation handoff template",
       summary:
         "Copy this into your internal escalation tool. Replace the placeholders and omit information the receiving team does not need.",
-      layout: "replies",
+      layout: "narrative",
       items: [
         {
           title: "Internal escalation packet",
-          value: "[Workflow] · [Expected outcome] · [Observed result]",
           description:
             "Customer impact: [What is blocked, stated by the customer]\nAuthorized requester confirmed: [How your policy was followed]\nWorkspace / issue reference: [Approved internal reference]\nExpected behavior: [Include source or approved policy]\nObserved behavior: [What happened, without interpretation]\nSteps to reproduce: [Smallest safe sequence]\nChecks completed: [Identity, access, status, filters as relevant]\nEvidence: [Redacted screenshot / error and time]\nRequested decision: [What you need the next owner to determine]\nNext customer update: [Only a commitment your team has approved]",
           checks: [
@@ -250,7 +249,7 @@ export const linearSupportAsset = assetDocumentSchema.parse({
   ],
   gift: { status: "omitted" },
   task5Hook:
-    "I put together a small onboarding kit around three documented Linear workflows: invitations, guest visibility, and Triage. It includes draft replies and a proposed escalation handoff your support lead can adapt.",
+    "I put together an operations field guide around three documented Linear workflows: invitations, guest visibility, and Triage. It includes diagnostic playcards, a proposed routing matrix, and an escalation handoff your support lead can adapt.",
   warnings: [
     "Reference example authored from public documentation, not live autonomous generation.",
     "No claim about Linear hiring, ticket frequency, backlog, or team performance has been verified or made.",

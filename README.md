@@ -11,21 +11,27 @@ Run `npm install`, then `npm run dev`.
 - `/`: operator workspace, clearly separate from the prospect page.
 - `/api/assets/linear-support-onboarding/download`: editable Markdown kit.
 
-The reference contains three product-specific support reply drafts, a proposed escalation matrix, a five-day practice checklist, and an internal handoff template. It uses Linear's public documentation and official logo assets. It makes no claim about Linear hiring, ticket volume, internal processes, or performance. SupportLoop is the fictional seller from the exercise. There is no affiliation or endorsement.
+The reference is a standalone support operations field guide: three diagnostic playcards, a proposed escalation matrix, a five-day onboarding checklist, and an internal handoff template. It uses Linear's public documentation and official logo assets. It makes no claim about Linear hiring, ticket volume, internal processes, or performance. SupportLoop is the fictional seller from the exercise. There is no affiliation or endorsement.
 
 ## Correct reference and reuse
 
 The design/editorial reference is **avik-gtm/enrichflow-gtm-audit**, the newer Outbound Growth Playbook confirmed by the user. The original repo is untouched.
 
-Reused principles: company identity and palette, outcome-led editorial cover, useful work first, expandable supporting detail, source receipts. Not copied: the fixed GTM content, account scoring, outbound campaigns for every prospect, or EnrichFlow's CTA.
+Reused principles: company identity and palette, useful work first, and source receipts. The shared layout is now a working document with contents, scope, open sections, and implementation notes—not the GTM reference's landing-page cover or an email. No greeting, subject, pitch, or sales CTA is part of the asset.
 
-The renderer is data-driven. It supports replies, checklists, true tables, cards, steps, and narrative sections. Reusing the shell does not mean reusing Linear's facts or the support asset for unrelated sellers.
+The renderer is data-driven. It supports checklists, true tables, cards, steps, and copyable working templates. Legacy `replies` data remains readable without email-composer styling. New generation instructions prohibit that layout and keep seller-to-prospect copy only in the private `task5Hook`. Reusing the shell does not mean reusing Linear's facts or the support asset for unrelated sellers.
+
+## What to pass
+
+Send one JSON field: `{"prompt":"your plain-language context"}`. In that prompt include: seller/product; prospect name/domain; selected buyer; observed facts with relevant source text; and your reasoning, clearly labelled as a hypothesis. Task 1 filters, scores, profile findings, approved brand assets, and a preferred document type are optional. The operator page builds this exact JSON body without attempting an unauthenticated POST.
+
+The current writer does not fetch domains, LinkedIn profiles, or source URLs. Pass actual findings from Clay if you want evidence-specific material. A source link alone is not proof. See [Clay setup](docs/CLAY_SETUP.md) for a copyable prompt.
 
 ## What is working
 
 - Fully authored reference with real source links and checked dates.
-- Source-backed response drafts; proposals distinguished from documented behavior.
-- Prospect branding, collapsible sections, copy buttons, interactive checklists, editable download.
+- Source-backed diagnostic playcards; proposals distinguished from documented behavior.
+- Prospect branding, document contents, open working sections, copy buttons, interactive checklists, editable download.
 - Recipient-only projection for page, public JSON, and download. Internal Task 5 hook and research seeds do not ship to the recipient.
 - Explicit reference API mode and an approved-generator adapter with typed schema validation.
 - HTTPS-only external links, safe text rendering, hosted POST authentication fails closed.

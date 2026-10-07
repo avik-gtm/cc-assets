@@ -1,117 +1,53 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { CopyButton } from "./AssetActions";
 
-const samplePrompt = `Product: SupportLoop helps software companies coordinate customer-support QA, escalation, knowledge, and workforce operations.
-Problem solved: Keeping support quality and knowledge consistent as commercial demand and the support team change.
-Universe: US B2B software companies with 500-2,000 employees and at least one active support opening.
-Signal: For this practice scenario only, imagine simultaneous sales and support hiring. This has NOT been verified for Linear.
-Signal logic: New support hires may benefit from onboarding material. Do not assert a backlog or a performance problem.
-Buyer: VP Customer Support or Support Operations.
-Company: Linear.
-Domain: linear.app.
-Source URLs: https://linear.app/docs/invite-members, https://linear.app/docs/members-roles, https://linear.app/docs/triage
-Create product-specific response drafts, a proposed escalation matrix, and a first-week practice checklist. Keep my scoring and qualification private.`;
-
-type Result = {
-  success: boolean;
-  assetUrl?: string;
-  assetTitle?: string;
-  error?: string;
-  generationMode?: string;
-  executionTimeMs?: number;
-  warnings?: string[];
-};
+const samplePrompt = `Product: AccessProof helps digital teams test websites and applications for accessibility problems and coordinate remediation.
+Prospect: Northstar Commerce, a fictional online retailer. No real domain supplied.
+Buyer: Head of Digital Product.
+Observed facts: None about this fictional prospect. A checkout redesign is a hypothetical practice scenario, not a verified event. No accessibility audit has been performed.
+My reasoning: A redesign is a useful moment to plan accessibility testing. It is not proof of existing defects.
+Create a standalone checkout testing plan with test cases, a remediation-ticket template, and a release checklist. Label it as a fictional practice plan. No invented findings, sources, metrics, or brand identity. No email, pitch, or gift. Keep qualification and outreach notes private.`;
 
 export function DemoForm() {
   const [prompt, setPrompt] = useState(samplePrompt);
-  const [result, setResult] = useState<Result | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  async function submit(reference: boolean) {
-    setLoading(true);
-    setResult(null);
-    try {
-      const response = await fetch("/api/assets", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(
-          reference ? { example: "linear-support" } : { prompt },
-        ),
-      });
-      const payload = (await response.json()) as Result;
-      setResult(payload);
-    } catch (error) {
-      setResult({
-        success: false,
-        error: error instanceof Error ? error.message : "Request failed.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  const payload = JSON.stringify({ prompt }, null, 2);
   return (
-    <form
-      className="demo-form"
-      onSubmit={(event: FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        void submit(false);
-      }}
-    >
-      <label htmlFor="asset-prompt">Asset context</label>
+    <section className="demo-form" aria-labelledby="payload-title">
+      <h2 id="payload-title">One prompt in. A document URL out.</h2>
+      <p className="operator-note">
+        This prepares the request only; it does not call the generator. The
+        example is deliberately fictional.
+      </p>
+      <label htmlFor="asset-prompt">Your context, in plain language</label>
       <textarea
         id="asset-prompt"
         name="prompt"
-        rows={15}
+        rows={12}
         value={prompt}
         onChange={(event) => setPrompt(event.target.value)}
       />
-      <div className="studio-actions">
-        <button
-          className="button"
-          type="button"
-          disabled={loading}
-          onClick={() => void submit(true)}
-        >
-          Test API with authored reference
-        </button>{" "}
-        <button
-          className="button"
-          type="submit"
-          disabled={loading || !prompt.trim()}
-        >
-          {loading ? "Working…" : "Generate from prompt"}
-        </button>
+      <div className="payload-preview">
+        <p className="endpoint">
+          POST /api/assets · Content-Type: application/json
+        </p>
+        <p className="operator-note">
+          Authenticate from Clay with Authorization: Bearer [your private API
+          key]. Never put that key in this prompt.
+        </p>
+        <details>
+          <summary>Preview the exact JSON body</summary>
+          <pre>{payload}</pre>
+        </details>
       </div>
+      <CopyButton text={payload} label="Copy JSON body" />
       <p className="operator-note">
-        The reference API test ignores the editable prompt and returns the saved
-        example. New prompt generation uses the configured writer. On a
-        protected deployment, call the API from Clay with your bearer key; this
-        public form does not store credentials.
+        The body has only one field: prompt. You do not need to design the
+        output JSON or write the asset yourself. A successful API response
+        includes assetUrl for Task 4 and a separate, private task5Hook for Task
+        5.
       </p>
-      {result ? (
-        <div
-          className={`form-result ${result.success ? "success" : "error"}`}
-          aria-live="polite"
-        >
-          {result.success && result.assetUrl ? (
-            <>
-              <span>Created: {result.assetTitle}</span>
-              <span>
-                Mode: {result.generationMode} · {result.executionTimeMs} ms
-                (reference retrieval is not AI generation time)
-              </span>
-              {result.warnings?.map((warning) => (
-                <span key={warning}>{warning}</span>
-              ))}
-              <a href={result.assetUrl}>Open personalized asset →</a>
-            </>
-          ) : (
-            <span>{result.error || "Generation failed."}</span>
-          )}
-        </div>
-      ) : null}
-    </form>
+    </section>
   );
 }

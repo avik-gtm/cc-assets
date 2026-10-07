@@ -15,7 +15,7 @@ The new implementation adapts its editorial principles, not its outbound content
 
 `public/brands/linear-wordmark-dark.svg` is an unaltered asset from https://static.linear.app/design-assets/Linear-Brand-Assets.zip. Use is for identifying the example recipient, not implying a partnership. The blue accent is a presentation accent consistent with the brand; no live automatic palette extraction is claimed.
 
-Draft replies paraphrase the documentation. The escalation matrix, five-day practice plan, and handoff packet are original proposed operating aids, not descriptions of Linear's existing processes. No numerical benefits, hiring facts, ticket-frequency claims, or customer complaints are asserted.
+Diagnostic playcards paraphrase the documentation. The escalation matrix, five-day practice plan, and handoff packet are original proposed operating aids, not descriptions of Linear's existing processes. No numerical benefits, hiring facts, ticket-frequency claims, or customer complaints are asserted. The revised shell is a working document, not a landing page or an email to the prospect. Task 5 copy remains separate and private.
 
 SupportLoop is the fictional seller supplied in the exercise. There is no verified employee identity or hobby, so the gift is omitted.
 

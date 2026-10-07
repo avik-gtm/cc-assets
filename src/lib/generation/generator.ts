@@ -93,7 +93,7 @@ export async function generateAsset(
       error instanceof Error ? error.name : "UnknownError",
     );
     throw new GenerationUnavailableError(
-      "The generation service could not produce a valid asset within its deadline. No placeholder was published; the authored reference remains available.",
+      "The generation service failed or returned invalid output. No placeholder was published; the authored reference remains available. Check the provider's access, billing, and runtime diagnostics before retrying.",
     );
   }
 }

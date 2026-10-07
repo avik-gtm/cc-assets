@@ -3,7 +3,7 @@ import { useState } from "react";
 
 export function CopyButton({
   text,
-  label = "Copy draft",
+  label = "Copy text",
 }: {
   text: string;
   label?: string;
@@ -40,7 +40,7 @@ export function DownloadKit({ slug }: { slug: string }) {
       href={`/api/assets/${encodeURIComponent(slug)}/download`}
       download={`${slug}.md`}
     >
-      Download the kit <span aria-hidden="true">↓</span>
+      Download document <span aria-hidden="true">↓</span>
     </a>
   );
 }

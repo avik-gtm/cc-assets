@@ -57,7 +57,7 @@ export function assetToMarkdown(asset: PublicAsset): string {
         `### ${item.title}`,
         "",
         item.usage || "",
-        item.value ? `Subject: ${item.value}` : "",
+        item.value || "",
         item.description,
       );
       if (item.cells)
@@ -71,7 +71,7 @@ export function assetToMarkdown(asset: PublicAsset): string {
   }
   lines.push(
     "",
-    "## Before using this kit",
+    "## Implementation notes",
     "",
     ...asset.recommendedActions.map((action) => `- ${action}`),
   );

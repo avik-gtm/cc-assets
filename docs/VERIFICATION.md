@@ -1,4 +1,6 @@
-# Prototype verification — 2026-10-07
+# Prototype verification — initial publication, 2026-10-07
+
+Historical snapshot. For the current document-first structure and 33-test verification, see [the structure fix](DOCUMENT_STRUCTURE_FIX.md). For the subsequent model-service billing failure, see [the AccessProof API run](ACCESSPROOF_API_RUN.md). The no-provider state below describes the initial publication, not the current configuration.
 
 ## Published result
 
