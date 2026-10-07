@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await parseBody(request);
     const input = normalizeAssetRequest(body);
-    const { asset, storage } = await createPersonalizedAsset(
+    const { asset, storage, generation } = await createPersonalizedAsset(
       input,
       request.headers.get("idempotency-key"),
     );
@@ -67,6 +67,7 @@ export async function POST(request: NextRequest) {
       generationMode: asset.generationMode,
       task5Hook: asset.task5Hook,
       storage,
+      generation,
       warnings: asset.warnings,
       executionTimeMs: Math.round(performance.now() - startedAt),
     });

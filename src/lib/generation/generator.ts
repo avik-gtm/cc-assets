@@ -6,11 +6,13 @@ import {
 import { z } from "zod";
 import { linearSupportAsset } from "@/lib/examples/linear-support";
 import { PERSONALIZED_ASSET_SYSTEM_PROMPT } from "@/lib/generation/system-prompt";
+import { generateWithGateway } from "./gateway";
 
 export type GenerationResult = {
   asset: GeneratedAsset;
   mode: "reference" | "agent";
   warnings: string[];
+  metadata?: Awaited<ReturnType<typeof generateWithGateway>>["metadata"];
 };
 
 export class GenerationUnavailableError extends Error {
@@ -62,13 +64,24 @@ export async function generateAsset(
       ],
     };
   }
-  if (!process.env.ASSET_GENERATOR_URL) {
+  if (!process.env.ASSET_GENERATOR_URL && !process.env.AI_GATEWAY_MODEL) {
     throw new GenerationUnavailableError(
-      "New-company generation is not configured. Open the authored reference at /examples/linear-support, or connect an approved service with ASSET_GENERATOR_URL. No placeholder asset was published.",
+      "New-company generation is not configured. Configure AI_GATEWAY_MODEL with Gateway authentication or connect ASSET_GENERATOR_URL. No placeholder asset was published.",
     );
   }
 
   try {
+    if (!process.env.ASSET_GENERATOR_URL) {
+      const result = await generateWithGateway(input);
+      return {
+        asset: result.asset,
+        mode: "agent",
+        metadata: result.metadata,
+        warnings: [
+          "Generated from supplied context only. No live website, LinkedIn, or accessibility audit was performed.",
+        ],
+      };
+    }
     return {
       asset: await callApprovedAgentService(input),
       mode: "agent",

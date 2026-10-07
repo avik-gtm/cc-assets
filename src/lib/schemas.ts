@@ -97,6 +97,7 @@ export const sectionSchema = z
     id: z.string().min(1).max(100),
     eyebrow: z.string().max(100).optional(),
     title: z.string().min(1).max(300),
+    navigationLabel: z.string().max(32).optional(),
     summary: z.string().max(4_000).optional(),
     layout: z.enum([
       "cards",

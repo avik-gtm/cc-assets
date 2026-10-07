@@ -113,6 +113,9 @@ function SectionContents({ section }: { section: AssetSection }) {
           </span>
           <h3>{item.title}</h3>
           <p>{item.description}</p>
+          {section.layout === "narrative" ? (
+            <CopyButton text={item.description} label="Copy template" />
+          ) : null}
           {item.checks ? (
             <PracticeChecklist items={item.checks} group={item.title} />
           ) : null}
@@ -128,12 +131,6 @@ function SectionContents({ section }: { section: AssetSection }) {
 }
 
 export function AssetView({ asset }: { asset: PublicAsset }) {
-  const replies = asset.sections.find(
-    (section) => section.layout === "replies",
-  );
-  const checklist = asset.sections.find(
-    (section) => section.layout === "checklist",
-  );
   const style = {
     "--accent": asset.brandColor,
     "--hero-bg": asset.brandBackground || "#171713",
@@ -163,13 +160,7 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
           <div className="nav-links">
             {asset.sections.slice(0, 3).map((section) => (
               <a href={`#${section.id}`} key={section.id}>
-                {section.layout === "replies"
-                  ? "The drafts"
-                  : section.layout === "table"
-                    ? "Escalations"
-                    : section.layout === "checklist"
-                      ? "First week"
-                      : section.eyebrow || "Details"}
+                {section.navigationLabel || section.eyebrow || section.title}
               </a>
             ))}
             <a href="#sources">Sources</a>
@@ -208,30 +199,12 @@ export function AssetView({ asset }: { asset: PublicAsset }) {
               More useful work.
             </h2>
             <div className="cover-list">
-              <div>
-                <span>
-                  {String(
-                    replies?.items.length || asset.sections.length,
-                  ).padStart(2, "0")}
-                </span>
-                <p>
-                  {replies ? "Product-specific drafts" : "Practical modules"}
-                </p>
-              </div>
-              <div>
-                <span>01</span>
-                <p>Clear handoff template</p>
-              </div>
-              <div>
-                <span>
-                  {String(
-                    checklist?.items.length || asset.sources.length,
-                  ).padStart(2, "0")}
-                </span>
-                <p>
-                  {checklist ? "Days of guided practice" : "Supporting sources"}
-                </p>
-              </div>
+              {asset.sections.slice(0, 3).map((section, index) => (
+                <div key={section.id}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <p>{section.navigationLabel || section.title}</p>
+                </div>
+              ))}
             </div>
             <div className="cover-footer">
               <span className="mini-line" />A starting point. Yours to adapt.

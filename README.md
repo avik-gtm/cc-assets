@@ -1,6 +1,6 @@
 # Personalized assets — recipient-first prototype
 
-The current milestone is one complete, source-backed customer-support asset, not a universal autonomous generator.
+The repository contains an authored support example and a prompt-first AI writer with durable publication. The deployed writer is currently blocked by Vercel AI Gateway billing verification; it has not yet completed a live generated asset.
 
 ## Open it
 
@@ -33,9 +33,11 @@ The renderer is data-driven. It supports replies, checklists, true tables, cards
 
 ## What is NOT complete
 
-No live research/writer service is configured. A new prompt without `ASSET_GENERATOR_URL` returns **503**, not a generic placeholder advertised as personalized work. The older fallback module is retained only for historical compatibility tests and is not called by the publication path.
+Direct writing is implemented using AI SDK structured output, the configured `AI_GATEWAY_MODEL`, and deployment OIDC. The model receives your normalized prompt, server-side recipient-first instructions, and the output schema. This path has no web, LinkedIn, screenshot, or audit tools. It can write from supplied context and produce clearly labelled proposed plans; it cannot verify company facts. Unsupplied source/logo URLs are rejected. `ASSET_GENERATOR_URL` remains an alternative external-service adapter.
 
-Arbitrary-company generation still requires a real service implementing bounded research, branding, writing, and evidence checks. New generated assets on Vercel also need durable storage and `ASSET_API_KEY`. The provider adapter has contract tests, not a live-model test. The <120 second goal is unproven for researched generation; millisecond reference retrieval is not a generation benchmark.
+Production authentication and a dedicated public Blob store are configured. The AccessProof request reached the writer but failed: Vercel AI Gateway returned HTTP 403 requiring a valid payment method, and the asset API returned HTTP 503. No AccessProof asset was created. Do not claim live generation or the <120 second target is verified. See [the exact request](examples/requests/accessproof-northstar.json) and [run record](docs/ACCESSPROOF_API_RUN.md).
+
+Arbitrary-company research, verified brand extraction, and browser accessibility testing are not implemented. The older fallback module remains for historical tests only and is never substituted for failed generation. Authenticated prompts and Task 5 handoffs must remain private; only recipient content is saved in public Blob storage.
 
 Gift fulfillment is not implemented. No gifts are purchased and no hobbies are inferred. Suggested gifts do not appear as redeemable gifts on public pages.
 

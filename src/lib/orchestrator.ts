@@ -10,6 +10,7 @@ import { saveAsset } from "@/lib/storage";
 export type CreateAssetResult = {
   asset: AssetDocument;
   storage: "blob" | "memory" | "bundled";
+  generation?: Awaited<ReturnType<typeof generateAsset>>["metadata"];
 };
 
 export async function createPersonalizedAsset(
@@ -40,5 +41,5 @@ export async function createPersonalizedAsset(
     asset.warnings.push(
       "Local preview storage only: this asset is not durable across process restarts.",
     );
-  return { asset, storage };
+  return { asset, storage, generation: generation.metadata };
 }

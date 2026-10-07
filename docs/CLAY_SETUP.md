@@ -30,7 +30,9 @@ Create one useful asset for this recipient. Complete part of their work.
 Keep my scoring, qualification notes, and outreach draft private.
 ```
 
-**Current limitation:** an approved live generator must be connected via `ASSET_GENERATOR_URL`. Until then, this request returns 503 with an explanation; no generic asset is published. The reference remains readable.
+**Current limitation:** the direct AI Gateway writer is implemented and configured, but the Vercel team requires billing verification before model calls are allowed. The AccessProof run returned 503; no generated asset was published. The reference remains readable.
+
+The direct writer accepts the same prompt and uses only supplied context. It does not retrieve source URLs or inspect websites. Missing evidence must yield a proposed plan, not fabricated findings. See `examples/requests/accessproof-northstar.json` for the exact prompt-only request attempted.
 
 ## Service contract
 
@@ -38,12 +40,14 @@ The approved service receives `systemPrompt`, `input`, and the `GeneratedAsset` 
 
 Required for hosted new-company generation:
 
-- `ASSET_GENERATOR_URL`, optionally `ASSET_GENERATOR_TOKEN`.
+- `AI_GATEWAY_MODEL` plus authorized Gateway access via deployment OIDC, OR `ASSET_GENERATOR_URL` with optional `ASSET_GENERATOR_TOKEN`.
 - `ASSET_API_KEY` for authenticated Clay POSTs: `Authorization: Bearer [key]`.
 - `BLOB_READ_WRITE_TOKEN` or the supported linked Blob configuration for durable generated assets.
 - `NEXT_PUBLIC_APP_URL` set to the actual deployed origin if an override is needed; never set it to localhost in production.
 
 On Vercel, POST is denied when `ASSET_API_KEY` is absent. The public operator form intentionally does not store the key. Use Clay's credential mechanism for production requests. Public asset pages and downloads contain recipient content only; the POST response includes `task5Hook` for the operator.
+
+The API key is a sensitive Vercel secret and cannot be recovered via `env pull` (the local value is blank). Before connecting Clay, set a new API key through your secure configuration flow and put the same value into Clay's bearer credential. Do not paste keys into chat or committed JSON files.
 
 The public reference needs none of these secrets or storage services. Its data is bundled with the app.
 

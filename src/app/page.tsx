@@ -27,10 +27,10 @@ export default function HomePage() {
         </a>
       </section>
       <p className="operator-note">
-        This reference is pre-authored, not generated on demand. The prompt
-        endpoint still needs an approved generation service for new companies.
-        It will now tell you when that service is missing instead of publishing
-        a generic fallback as finished work.
+        The Linear reference is pre-authored. Authenticated API requests can
+        generate new assets from supplied context through a configured AI
+        writer. The direct writer does not browse websites or verify signals.
+        Missing evidence produces a proposed plan, not an invented audit.
       </p>
       <DemoForm />
     </main>

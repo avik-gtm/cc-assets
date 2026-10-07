@@ -9,11 +9,13 @@
 5. Keep operator reasoning and Task 5 copy off the public asset.
 6. Test content, API, public rendering, and safety boundaries; publish a preview for review.
 
-## Next: live generation, once the content direction is accepted
+## In progress: live generation
+
+Direct AI Gateway writing, authentication, and Blob storage have been added. Tests and build pass. The first hosted AccessProof request is blocked by Gateway billing verification (HTTP 403 at Gateway; 503 at the asset API). No generated AccessProof artifact exists yet. Resume after the user enables Gateway access or selects another provider; do not change billing automatically.
 
 The next milestone is not more templates. It is to reproduce this quality for a previously unseen company from one short prompt.
 
-- Connect an approved research/writing service. The present adapter accepts `systemPrompt`, `input`, and `outputSchema` and validates its JSON result.
+- Complete a live request with the configured direct writer, then connect bounded research separately. The external-service adapter still accepts `systemPrompt`, `input`, and `outputSchema`.
 - Extract seller, recipient, buyer, and source material without confusing their roles.
 - Choose one useful deliverable based on the problem and evidence, not keyword substitution.
 - Fetch a bounded set of public sources and verified brand assets. No private LinkedIn scraping or claimed research when pages are inaccessible.

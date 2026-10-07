@@ -86,7 +86,7 @@ export function DemoForm() {
       </div>
       <p className="operator-note">
         The reference API test ignores the editable prompt and returns the saved
-        example. New prompt generation requires a configured service. On a
+        example. New prompt generation uses the configured writer. On a
         protected deployment, call the API from Clay with your bearer key; this
         public form does not store credentials.
       </p>
